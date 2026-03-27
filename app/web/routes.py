@@ -3,9 +3,9 @@
 from flask import Flask, render_template, request, jsonify
 from app.data.trigrams import TRIGRAMS, TRIGRAM_ORDER
 from app.data.roles import (
-    ROLES, ROLE_ORDER, UNIVERSAL_OPTIONS, UNIVERSAL_QUESTIONS,
-    FOUR_IMAGE_LABELS,
+    ROLES, ROLE_ORDER, FOUR_IMAGE_LABELS,
 )
+from app.data.role_interpretations import get_role_interpretation
 from app.engine.diagnosis import diagnose, FOUR_IMAGE_IS_YANG
 
 
@@ -37,22 +37,26 @@ def create_app() -> Flask:
 
     @app.route("/api/roles")
     def get_roles():
-        """返回角色数据供前端渲染。"""
+        """返回角色数据供前端渲染（含每角色专属问题和选项）。"""
         result = []
         for key in ROLE_ORDER:
             r = ROLES[key]
+            questions_data = []
+            for q in r.questions:
+                questions_data.append({
+                    "title": q.title,
+                    "options": q.options,
+                })
             result.append({
                 "key": r.key,
                 "name": r.name,
                 "icon": r.icon,
                 "subtitle": r.subtitle,
-                "hints": r.hints,
+                "questions": questions_data,
                 "blind_spots": r.blind_spots,
             })
         return jsonify({
             "roles": result,
-            "questions": UNIVERSAL_QUESTIONS,
-            "options": UNIVERSAL_OPTIONS,
         })
 
     @app.route("/diagnose", methods=["POST"])
@@ -82,6 +86,15 @@ def create_app() -> Flask:
 
         # 获取角色信息
         role = ROLES.get(role_key, ROLES["investor"])
+
+        # 获取角色专属卦象解读
+        role_interp = get_role_interpretation(role_key, h.number)
+        role_interpretation_data = {
+            "core_bridge": role_interp.core_bridge,
+            "action": role_interp.action,
+            "warning": role_interp.warning,
+            "is_template": role_interp.is_template,
+        }
 
         # 六爻数据
         yao_data = []
@@ -174,6 +187,7 @@ def create_app() -> Flask:
                 "is_detailed": h.is_detailed,
                 "reflection_questions": reflection_questions,
             },
+            "role_interpretation": role_interpretation_data,
             "lower": {
                 "key": result.lower_key,
                 "name": lower_t.name,

@@ -208,6 +208,10 @@ header h1 {
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
 }
 
 .opt-pill:hover {
@@ -1026,6 +1030,85 @@ header h1 {
 .reset-btn:hover { border-color: #d4a853; color: #d4a853; }
 
 /* =============================================
+   OPTION DESCRIPTION (per-role specific options)
+   ============================================= */
+.opt-label {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.opt-desc {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.7;
+  line-height: 1.4;
+}
+
+.opt-pill.active .opt-desc {
+  opacity: 0.9;
+}
+
+/* =============================================
+   ROLE INTERPRETATION (prominent section)
+   ============================================= */
+.role-interp-section {
+  margin: 20px 0;
+  padding: 0;
+}
+
+.role-interp-title {
+  color: #d4a853;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #2a2520;
+}
+
+.role-interp-card {
+  background: linear-gradient(135deg, #1a1810 0%, #141218 100%);
+  border: 1px solid #2a2520;
+  border-left: 3px solid #d4a853;
+  border-radius: 8px;
+  padding: 16px 18px;
+}
+
+.role-interp-bridge {
+  color: #e0d8c8;
+  font-size: 14px;
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+
+.role-interp-action {
+  color: #b8c8a0;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background: rgba(100, 140, 80, 0.08);
+  border-radius: 6px;
+}
+
+.role-interp-action strong {
+  color: #8ab060;
+}
+
+.role-interp-warning {
+  color: #c8a898;
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 8px 10px;
+  background: rgba(180, 100, 80, 0.08);
+  border-radius: 6px;
+}
+
+.role-interp-warning strong {
+  color: #c07050;
+}
+
+/* =============================================
    MOBILE (Round 14)
    ============================================= */
 @media (max-width: 500px) {
@@ -1035,7 +1118,10 @@ header h1 {
   .role-pill { padding: 5px 8px; font-size: 12px; }
 
   .q-options { flex-direction: column; }
-  .opt-pill { min-width: 100%; }
+  .opt-pill { min-width: 100%; flex-direction: row; gap: 8px; justify-content: flex-start; text-align: left; }
+  .opt-label { min-width: 36px; }
+  .role-interp-bridge { font-size: 13px; }
+  .role-interp-action, .role-interp-warning { font-size: 12px; }
 
   .hex-calligraphy { font-size: 36px; }
   .hex-meta { flex-direction: column; gap: 8px; }

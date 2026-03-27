@@ -72,12 +72,28 @@
       </div>
     </section>
 
-    <!-- Gua Ci (Round 16) -->
+    <!-- Gua Ci -->
     <section class="gua-ci-section hidden" id="guaCiSection">
       <blockquote class="gua-ci-text" id="guaCiText"></blockquote>
     </section>
 
-    <!-- Tab bar: 3 tabs only (Round 11) -->
+    <!-- Role Interpretation — MOST PROMINENT -->
+    <section class="role-interp-section" id="roleInterpSection">
+      <h3 class="role-interp-title" id="roleInterpTitle">角色解读</h3>
+      <div class="role-interp-card">
+        <div class="role-interp-bridge" id="roleInterpBridge"></div>
+        <div class="role-interp-action">
+          <strong>行动指引：</strong>
+          <span id="roleInterpAction"></span>
+        </div>
+        <div class="role-interp-warning">
+          <strong>警惕：</strong>
+          <span id="roleInterpWarning"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab bar: 3 tabs only -->
     <div class="tab-bar" id="tabBar">
       <button class="tab-btn active" data-tab="tab-hexagram" onclick="switchTab('tab-hexagram', this)">卦象</button>
       <button class="tab-btn" data-tab="tab-deep" onclick="switchTab('tab-deep', this)">深入</button>
@@ -87,7 +103,7 @@
     <!-- ==================== TAB 1: 卦象 ==================== -->
     <div class="tab-content active" id="tab-hexagram">
 
-      <!-- Hexagram visual (Round 13) -->
+      <!-- Hexagram visual -->
       <section class="hex-visual">
         <div class="hex-lines" id="hexLines"></div>
       </section>
@@ -141,7 +157,7 @@
     <!-- ==================== TAB 2: 深入 ==================== -->
     <div class="tab-content" id="tab-deep">
 
-      <!-- Position selector (Round 12) — interactive hexagram -->
+      <!-- Position selector — interactive hexagram -->
       <section class="position-section">
         <h3>你在哪个位置？</h3>
         <p class="position-hint">点击卦象中的爻线，查看对应阶段的分析</p>
@@ -251,8 +267,6 @@
    STATE
    ============================================= */
 let allRoles = [];
-let universalQuestions = [];
-let universalOptions = [];
 let currentRole = null;
 const selections = {};
 const totalSteps = 6;
@@ -265,8 +279,6 @@ async function init() {
   const resp = await fetch('/api/roles');
   const data = await resp.json();
   allRoles = data.roles;
-  universalQuestions = data.questions;
-  universalOptions = data.options;
   currentRole = allRoles[0]; // Default to investor
   renderRolePills();
   renderQuestions();
@@ -291,48 +303,52 @@ function selectRole(role, pill) {
   currentRole = role;
   document.querySelectorAll('.role-pill').forEach(p => p.classList.remove('active'));
   pill.classList.add('active');
-  // Update hints
-  const hints = document.querySelectorAll('.q-hint');
-  hints.forEach((el, i) => {
-    el.textContent = role.hints[i] || universalQuestions[i].default_hint;
-  });
+  // Clear selections and re-render questions with new role's options
+  for (let i = 1; i <= 6; i++) delete selections['line' + i];
+  renderQuestions();
+  updateProgress();
 }
 
 /* =============================================
    RENDER QUESTIONS (all 6 on one page)
+   Per-role questions with per-role options
    ============================================= */
 function renderQuestions() {
   const grid = document.getElementById('questionsGrid');
   grid.innerHTML = '';
+  if (!currentRole || !currentRole.questions) return;
+
   for (let i = 0; i < 6; i++) {
-    const q = universalQuestions[i];
-    const hint = currentRole ? currentRole.hints[i] : q.default_hint;
+    const q = currentRole.questions[i];
+    if (!q) continue;
 
     const card = document.createElement('div');
     card.className = 'q-card';
     card.dataset.q = i + 1;
 
     let optionsHtml = '';
-    universalOptions.forEach(opt => {
+    q.options.forEach(opt => {
       const isYang = opt.key === 'young_yang' || opt.key === 'old_yang';
       const isOld = opt.key === 'old_yang' || opt.key === 'old_yin';
+      const isSelected = selections['line' + (i+1)] === opt.key;
       optionsHtml += `
-        <button class="opt-pill ${isYang ? 'opt-yang' : 'opt-yin'} ${isOld ? 'opt-old' : ''}"
+        <button class="opt-pill ${isYang ? 'opt-yang' : 'opt-yin'} ${isOld ? 'opt-old' : ''} ${isSelected ? 'active' : ''}"
                 data-key="${opt.key}" data-q="${i+1}"
                 onclick="selectOption(${i+1}, '${opt.key}', this)"
                 title="${opt.description}">
-          ${opt.label}
+          <span class="opt-label">${opt.label}</span>
+          <span class="opt-desc">${opt.description}</span>
         </button>`;
     });
 
+    const isAnswered = !!selections['line' + (i+1)];
     card.innerHTML = `
       <div class="q-header">
         <span class="q-num">${i+1}</span>
         <div class="q-text">
           <div class="q-title">${q.title}</div>
-          <div class="q-hint">${hint}</div>
         </div>
-        <span class="q-check hidden" id="qCheck${i+1}">✓</span>
+        <span class="q-check ${isAnswered ? '' : 'hidden'}" id="qCheck${i+1}">✓</span>
       </div>
       <div class="q-options">${optionsHtml}</div>
     `;
@@ -366,7 +382,7 @@ function updateProgress() {
 }
 
 /* =============================================
-   RANDOM CAST (Round 5 + Round 17 animation)
+   RANDOM CAST
    ============================================= */
 function randomCast() {
   const keys = ['young_yang', 'old_yang', 'young_yin', 'old_yin'];
@@ -437,7 +453,7 @@ async function submitDiagnosis() {
   }
 }
 
-/* Casting animation: lines drawn one by one (Round 17) */
+/* Casting animation: lines drawn one by one */
 function animateCasting() {
   const container = document.getElementById('castingLines');
   container.innerHTML = '';
@@ -477,13 +493,24 @@ function renderResult(d) {
   const levelMap = {'低':'low','中':'mid','高':'high','极高':'extreme'};
   riskBadge.dataset.level = levelMap[d.risk_level] || 'mid';
 
-  // Gua Ci (Round 16)
+  // Gua Ci
   const gcSection = document.getElementById('guaCiSection');
   if (h.gua_ci) {
     gcSection.classList.remove('hidden');
     document.getElementById('guaCiText').textContent = h.gua_ci;
   } else {
     gcSection.classList.add('hidden');
+  }
+
+  // Role Interpretation — PROMINENT
+  const ri = d.role_interpretation;
+  if (ri) {
+    document.getElementById('roleInterpSection').classList.remove('hidden');
+    const roleName = currentRole ? currentRole.name : '角色';
+    document.getElementById('roleInterpTitle').textContent = roleName + '解读';
+    document.getElementById('roleInterpBridge').textContent = ri.core_bridge;
+    document.getElementById('roleInterpAction').textContent = ri.action;
+    document.getElementById('roleInterpWarning').textContent = ri.warning;
   }
 
   // Build changing positions lookup
@@ -494,7 +521,7 @@ function renderResult(d) {
     d.line_choices.forEach(lc => { lineChoicesMap[lc.position] = lc; });
   }
 
-  // Hexagram visual (Round 13 — prominent, centered, with labels)
+  // Hexagram visual
   renderHexagramVisual(d, changingPositions, lineChoicesMap);
 
   // Warnings
@@ -527,7 +554,7 @@ function renderResult(d) {
   // Yao detail list
   renderYaoList(d, changingPositions, lineChoicesMap);
 
-  // Position interactive hexagram (Round 12)
+  // Position interactive hexagram
   renderPositionHex(d, changingPositions);
 
   // Changing lines
@@ -781,6 +808,7 @@ function buildShareText(d, h) {
     ? `变爻：${d.changing_lines.map(c => '第' + c.position + '爻(' + (c.four_image === 'old_yang' ? '太阳' : '太阴') + ')').join('、')}`
     : '无变爻';
   const transformedInfo = d.transformed ? `变卦：${d.transformed.full_name}` : '';
+  const ri = d.role_interpretation || {};
 
   document.getElementById('shareText').value = `【易经情境诊断】
 角色：${currentRole.name}
@@ -789,6 +817,10 @@ ${h.gua_ci ? '卦辞：' + h.gua_ci : ''}
 ${changingInfo}
 ${transformedInfo}
 风险：${d.risk_level}
+
+${currentRole.name}解读：${(ri.core_bridge || '').substring(0, 150)}...
+行动：${(ri.action || '').substring(0, 100)}
+警惕：${ri.warning || ''}
 
 卦义：${h.core_meaning.substring(0, 100)}...
 策略：${h.strategy.substring(0, 100)}...
@@ -830,9 +862,8 @@ function resetAll() {
   document.getElementById('result').classList.add('hidden');
   document.getElementById('inputSection').classList.remove('hidden');
 
-  // Reset option pills
-  document.querySelectorAll('.opt-pill').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('[id^="qCheck"]').forEach(c => c.classList.add('hidden'));
+  // Re-render questions (clears selections visually)
+  renderQuestions();
   updateProgress();
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
