@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>易经情境诊断</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>易经情境诊断</h1>
+    <p class="subtitle">六爻四象 · 直指人心</p>
+  </header>
+
+  <!-- ============================================= -->
+  <!-- INPUT SECTION: single-page questionnaire      -->
+  <!-- ============================================= -->
+  <div id="inputSection">
+    <!-- Role selector: small pill bar -->
+    <div class="role-bar">
+      <span class="role-bar-label">身份</span>
+      <div class="role-pills" id="rolePills"></div>
+    </div>
+
+    <!-- Progress indicator -->
+    <div class="progress-bar" id="progressBar">
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <span class="progress-text" id="progressText">0/6</span>
+    </div>
+
+    <!-- 6 questions on one page -->
+    <div class="questions-grid" id="questionsGrid"></div>
+
+    <!-- Bottom actions -->
+    <div class="input-actions">
+      <button class="random-btn" id="randomBtn" onclick="randomCast()">
+        <span class="random-icon">🎲</span> 随机起卦
+      </button>
+      <button class="submit-btn" id="submitBtn" onclick="submitDiagnosis()" disabled>
+        起卦诊断
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- LOADING                                       -->
+  <!-- ============================================= -->
+  <div id="loading" class="loading hidden">
+    <div class="casting-animation" id="castingAnim">
+      <div class="casting-lines" id="castingLines"></div>
+      <p class="casting-text">起卦中...</p>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- RESULT SECTION                                -->
+  <!-- ============================================= -->
+  <div id="result" class="result hidden">
+    <!-- Hexagram header with calligraphy-style name -->
+    <section class="hex-header">
+      <div class="hex-name-block">
+        <span class="hex-number" id="hexNumber"></span>
+        <h2 class="hex-calligraphy" id="hexName"></h2>
+        <span class="hex-fullname" id="hexFullName"></span>
+      </div>
+      <div class="hex-meta">
+        <span class="hex-trigrams" id="hexTrigrams"></span>
+        <span class="risk-badge" id="riskBadge"></span>
+      </div>
+    </section>
+
+    <!-- Gua Ci (Round 16) -->
+    <section class="gua-ci-section hidden" id="guaCiSection">
+      <blockquote class="gua-ci-text" id="guaCiText"></blockquote>
+    </section>
+
+    <!-- Tab bar: 3 tabs only (Round 11) -->
+    <div class="tab-bar" id="tabBar">
+      <button class="tab-btn active" data-tab="tab-hexagram" onclick="switchTab('tab-hexagram', this)">卦象</button>
+      <button class="tab-btn" data-tab="tab-deep" onclick="switchTab('tab-deep', this)">深入</button>
+      <button class="tab-btn" data-tab="tab-reflect" onclick="switchTab('tab-reflect', this)">自省</button>
+    </div>
+
+    <!-- ==================== TAB 1: 卦象 ==================== -->
+    <div class="tab-content active" id="tab-hexagram">
+
+      <!-- Hexagram visual (Round 13) -->
+      <section class="hex-visual">
+        <div class="hex-lines" id="hexLines"></div>
+      </section>
+
+      <!-- Warnings -->
+      <section class="warnings hidden" id="warningsSection">
+        <h3>变爻提示</h3>
+        <ul id="warningsList"></ul>
+      </section>
+
+      <!-- Core meaning -->
+      <section class="meaning-section">
+        <h3>卦义核心</h3>
+        <p id="coreMeaning" class="meaning-text"></p>
+      </section>
+
+      <!-- Situation -->
+      <section class="meaning-section">
+        <h3>当前处境</h3>
+        <p id="situation" class="situation-text"></p>
+      </section>
+
+      <!-- Strategy -->
+      <section class="meaning-section">
+        <h3>最佳策略</h3>
+        <p id="strategy" class="strategy-text"></p>
+      </section>
+
+      <!-- Risk -->
+      <section class="meaning-section">
+        <h3>关键风险</h3>
+        <p id="risk" class="risk-text"></p>
+      </section>
+
+      <!-- Action summary -->
+      <section class="action-summary">
+        <div class="action-box">
+          <div class="action-header">
+            <span class="action-title">行动建议</span>
+          </div>
+          <p id="actionSummary"></p>
+        </div>
+      </section>
+
+      <!-- Share button at bottom of tab -->
+      <div class="tab-share-row">
+        <button class="share-inline-btn" onclick="copyShare()">复制诊断摘要</button>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: 深入 ==================== -->
+    <div class="tab-content" id="tab-deep">
+
+      <!-- Position selector (Round 12) — interactive hexagram -->
+      <section class="position-section">
+        <h3>你在哪个位置？</h3>
+        <p class="position-hint">点击卦象中的爻线，查看对应阶段的分析</p>
+        <div class="position-hex-interactive" id="positionHexInteractive"></div>
+        <div class="position-detail hidden" id="positionDetail">
+          <div class="pos-detail-header" id="posDetailHeader"></div>
+          <div class="pos-detail-classical" id="posDetailClassical"></div>
+          <div class="pos-detail-interp" id="posDetailInterp"></div>
+          <div class="pos-detail-advice" id="posDetailAdvice"></div>
+          <div class="pos-detail-changing hidden" id="posDetailChanging"></div>
+        </div>
+      </section>
+
+      <!-- Yao detail (collapsed by default) -->
+      <section class="yao-detail">
+        <h3>六爻详解</h3>
+        <div id="yaoList"></div>
+      </section>
+
+      <!-- Changing lines / transformed hexagram -->
+      <section class="changing-section hidden" id="changingSection">
+        <h3>变爻与变卦</h3>
+        <div id="changingList"></div>
+        <div class="transformed-hex hidden" id="transformedHex">
+          <h4>变卦</h4>
+          <div id="transformedInfo"></div>
+        </div>
+      </section>
+
+      <!-- Direction -->
+      <section class="meaning-section">
+        <h3>变化方向</h3>
+        <p id="direction" class="direction-text"></p>
+      </section>
+
+      <!-- Key yao -->
+      <section class="extra hidden" id="keyYaoSection">
+        <h3>关键爻辞</h3>
+        <p id="keyYao"></p>
+      </section>
+
+      <!-- Structure -->
+      <section class="structure-section">
+        <h3>卦象结构</h3>
+        <p id="structure"></p>
+      </section>
+
+      <div class="tab-share-row">
+        <button class="share-inline-btn" onclick="copyShare()">复制诊断摘要</button>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: 自省 ==================== -->
+    <div class="tab-content" id="tab-reflect">
+      <section class="bias">
+        <h3>反偏差自省</h3>
+
+        <!-- Role blind spots -->
+        <div class="bias-card" id="blindSpotsCard">
+          <div class="bias-label" id="blindSpotsLabel">角色盲区</div>
+          <ul id="blindSpotsList"></ul>
+        </div>
+
+        <!-- Reflection questions -->
+        <div class="bias-card hidden" id="reflectionCard">
+          <div class="bias-label">卦象反思</div>
+          <ul id="reflectionList"></ul>
+        </div>
+
+        <!-- Contrast analysis -->
+        <div class="bias-card hidden" id="contrastCard">
+          <div class="bias-label">对立面思考</div>
+          <p id="contrastText"></p>
+        </div>
+
+        <div class="bias-card">
+          <div class="bias-label">下卦自省（内在状态）</div>
+          <p id="innerBias"></p>
+        </div>
+        <div class="bias-card">
+          <div class="bias-label">上卦自省（外部环境）</div>
+          <p id="outerBias"></p>
+        </div>
+        <div class="bias-card">
+          <div class="bias-label">对手视角反转</div>
+          <p id="opponent"></p>
+        </div>
+      </section>
+
+      <div class="tab-share-row">
+        <button class="share-inline-btn" onclick="copyShare()">复制诊断摘要</button>
+      </div>
+    </div>
+
+    <!-- Bottom actions -->
+    <div class="bottom-actions">
+      <button class="reset-btn" onclick="resetAll()">重新诊断</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden share textarea -->
+<textarea id="shareText" style="position:absolute;left:-9999px" readonly></textarea>
+
+<script>
+/* =============================================
+   STATE
+   ============================================= */
+let allRoles = [];
+let universalQuestions = [];
+let universalOptions = [];
+let currentRole = null;
+const selections = {};
+const totalSteps = 6;
+let currentDiagnosisData = null;
+
+/* =============================================
+   INIT
+   ============================================= */
+async function init() {
+  const resp = await fetch('/api/roles');
+  const data = await resp.json();
+  allRoles = data.roles;
+  universalQuestions = data.questions;
+  universalOptions = data.options;
+  currentRole = allRoles[0]; // Default to investor
+  renderRolePills();
+  renderQuestions();
+}
+
+/* =============================================
+   ROLE PILLS (small horizontal selector)
+   ============================================= */
+function renderRolePills() {
+  const container = document.getElementById('rolePills');
+  container.innerHTML = '';
+  allRoles.forEach((r, idx) => {
+    const pill = document.createElement('button');
+    pill.className = 'role-pill' + (idx === 0 ? ' active' : '');
+    pill.innerHTML = `<span class="pill-icon">${r.icon}</span>${r.name}`;
+    pill.onclick = () => selectRole(r, pill);
+    container.appendChild(pill);
+  });
+}
+
+function selectRole(role, pill) {
+  currentRole = role;
+  document.querySelectorAll('.role-pill').forEach(p => p.classList.remove('active'));
+  pill.classList.add('active');
+  // Update hints
+  const hints = document.querySelectorAll('.q-hint');
+  hints.forEach((el, i) => {
+    el.textContent = role.hints[i] || universalQuestions[i].default_hint;
+  });
+}
+
+/* =============================================
+   RENDER QUESTIONS (all 6 on one page)
+   ============================================= */
+function renderQuestions() {
+  const grid = document.getElementById('questionsGrid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    const q = universalQuestions[i];
+    const hint = currentRole ? currentRole.hints[i] : q.default_hint;
+
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    card.dataset.q = i + 1;
+
+    let optionsHtml = '';
+    universalOptions.forEach(opt => {
+      const isYang = opt.key === 'young_yang' || opt.key === 'old_yang';
+      const isOld = opt.key === 'old_yang' || opt.key === 'old_yin';
+      optionsHtml += `
+        <button class="opt-pill ${isYang ? 'opt-yang' : 'opt-yin'} ${isOld ? 'opt-old' : ''}"
+                data-key="${opt.key}" data-q="${i+1}"
+                onclick="selectOption(${i+1}, '${opt.key}', this)"
+                title="${opt.description}">
+          ${opt.label}
+        </button>`;
+    });
+
+    card.innerHTML = `
+      <div class="q-header">
+        <span class="q-num">${i+1}</span>
+        <div class="q-text">
+          <div class="q-title">${q.title}</div>
+          <div class="q-hint">${hint}</div>
+        </div>
+        <span class="q-check hidden" id="qCheck${i+1}">✓</span>
+      </div>
+      <div class="q-options">${optionsHtml}</div>
+    `;
+    grid.appendChild(card);
+  }
+}
+
+function selectOption(qNum, key, btn) {
+  // Deselect siblings
+  btn.parentElement.querySelectorAll('.opt-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  selections['line' + qNum] = key;
+
+  // Show check
+  const check = document.getElementById('qCheck' + qNum);
+  check.classList.remove('hidden');
+
+  // Update progress
+  updateProgress();
+}
+
+function updateProgress() {
+  let count = 0;
+  for (let i = 1; i <= totalSteps; i++) {
+    if (selections['line' + i]) count++;
+  }
+  const pct = Math.round((count / totalSteps) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = count + '/' + totalSteps;
+  document.getElementById('submitBtn').disabled = (count < totalSteps);
+}
+
+/* =============================================
+   RANDOM CAST (Round 5 + Round 17 animation)
+   ============================================= */
+function randomCast() {
+  const keys = ['young_yang', 'old_yang', 'young_yin', 'old_yin'];
+  // Traditional probability: 少阳 3/8, 太阳 1/8, 少阴 3/8, 太阴 1/8
+  const weights = [3, 1, 3, 1];
+  const total = 8;
+
+  for (let i = 1; i <= 6; i++) {
+    const rand = Math.random() * total;
+    let cumul = 0;
+    let chosen = keys[0];
+    for (let j = 0; j < keys.length; j++) {
+      cumul += weights[j];
+      if (rand < cumul) { chosen = keys[j]; break; }
+    }
+    selections['line' + i] = chosen;
+
+    // Update UI
+    const btns = document.querySelectorAll(`[data-q="${i}"]`);
+    btns.forEach(b => {
+      b.classList.remove('active');
+      if (b.dataset.key === chosen) b.classList.add('active');
+    });
+    const check = document.getElementById('qCheck' + i);
+    check.classList.remove('hidden');
+  }
+  updateProgress();
+
+  // Auto-submit after brief visual
+  setTimeout(() => submitDiagnosis(), 400);
+}
+
+/* =============================================
+   SUBMIT & RENDER
+   ============================================= */
+async function submitDiagnosis() {
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+
+  // Show loading with line-by-line animation
+  document.getElementById('inputSection').classList.add('hidden');
+  document.getElementById('result').classList.add('hidden');
+  const loading = document.getElementById('loading');
+  loading.classList.remove('hidden');
+  animateCasting();
+
+  try {
+    const resp = await fetch('/diagnose', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...selections, role: currentRole.key }),
+    });
+    const data = await resp.json();
+    if (data.error) { alert(data.error); document.getElementById('inputSection').classList.remove('hidden'); return; }
+    currentDiagnosisData = data;
+
+    // Wait for animation to finish (minimum 1.5s)
+    await new Promise(r => setTimeout(r, 1500));
+
+    loading.classList.add('hidden');
+    renderResult(data);
+  } catch (err) {
+    alert('诊断失败: ' + err.message);
+    document.getElementById('inputSection').classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    loading.classList.add('hidden');
+  }
+}
+
+/* Casting animation: lines drawn one by one (Round 17) */
+function animateCasting() {
+  const container = document.getElementById('castingLines');
+  container.innerHTML = '';
+  for (let i = 1; i <= 6; i++) {
+    const lineEl = document.createElement('div');
+    lineEl.className = 'casting-line';
+    lineEl.style.animationDelay = (i * 0.2) + 's';
+
+    const choice = selections['line' + i];
+    const isYang = choice === 'young_yang' || choice === 'old_yang';
+    if (isYang) {
+      lineEl.innerHTML = '<span class="cl-yang"></span>';
+    } else {
+      lineEl.innerHTML = '<span class="cl-yin"><span></span><span></span></span>';
+    }
+    container.appendChild(lineEl);
+  }
+}
+
+/* =============================================
+   RENDER RESULT
+   ============================================= */
+function renderResult(d) {
+  const h = d.hexagram;
+
+  // Header
+  document.getElementById('hexNumber').textContent = '第' + h.number + '卦';
+  document.getElementById('hexName').textContent = h.name;
+  document.getElementById('hexFullName').textContent = h.full_name;
+  document.getElementById('hexTrigrams').innerHTML =
+    `<span>内 ${d.lower.symbol} ${d.lower.name}(${d.lower.element})</span>` +
+    `<span>外 ${d.upper.symbol} ${d.upper.name}(${d.upper.element})</span>`;
+
+  // Risk badge
+  const riskBadge = document.getElementById('riskBadge');
+  riskBadge.textContent = '风险 ' + d.risk_level;
+  const levelMap = {'低':'low','中':'mid','高':'high','极高':'extreme'};
+  riskBadge.dataset.level = levelMap[d.risk_level] || 'mid';
+
+  // Gua Ci (Round 16)
+  const gcSection = document.getElementById('guaCiSection');
+  if (h.gua_ci) {
+    gcSection.classList.remove('hidden');
+    document.getElementById('guaCiText').textContent = h.gua_ci;
+  } else {
+    gcSection.classList.add('hidden');
+  }
+
+  // Build changing positions lookup
+  const changingPositions = {};
+  d.changing_lines.forEach(c => { changingPositions[c.position] = c; });
+  const lineChoicesMap = {};
+  if (d.line_choices) {
+    d.line_choices.forEach(lc => { lineChoicesMap[lc.position] = lc; });
+  }
+
+  // Hexagram visual (Round 13 — prominent, centered, with labels)
+  renderHexagramVisual(d, changingPositions, lineChoicesMap);
+
+  // Warnings
+  const ws = document.getElementById('warningsSection');
+  const wl = document.getElementById('warningsList');
+  wl.innerHTML = '';
+  if (d.warnings.length > 0) {
+    ws.classList.remove('hidden');
+    d.warnings.forEach(w => {
+      const li = document.createElement('li');
+      li.textContent = w;
+      wl.appendChild(li);
+    });
+  } else { ws.classList.add('hidden'); }
+
+  // Text content
+  document.getElementById('coreMeaning').textContent = h.core_meaning;
+  document.getElementById('situation').textContent = h.situation;
+  document.getElementById('strategy').textContent = h.strategy;
+  document.getElementById('risk').textContent = h.risk;
+  document.getElementById('direction').textContent = h.direction;
+  document.getElementById('structure').textContent = h.structure;
+  document.getElementById('actionSummary').textContent = d.action_summary;
+
+  // Key yao
+  const kySection = document.getElementById('keyYaoSection');
+  if (h.key_yao) { kySection.classList.remove('hidden'); document.getElementById('keyYao').textContent = h.key_yao; }
+  else { kySection.classList.add('hidden'); }
+
+  // Yao detail list
+  renderYaoList(d, changingPositions, lineChoicesMap);
+
+  // Position interactive hexagram (Round 12)
+  renderPositionHex(d, changingPositions);
+
+  // Changing lines
+  renderChangingSection(d, changingPositions);
+
+  // Reflection tab
+  renderReflection(d, h);
+
+  // Share text
+  buildShareText(d, h);
+
+  // Reset to first tab
+  switchTab('tab-hexagram', document.querySelector('.tab-btn[data-tab="tab-hexagram"]'));
+
+  // Show result with fade
+  document.getElementById('result').classList.remove('hidden');
+  setTimeout(() => document.getElementById('result').scrollIntoView({ behavior: 'smooth' }), 100);
+}
+
+function renderHexagramVisual(d, changingPositions, lineChoicesMap) {
+  const container = document.getElementById('hexLines');
+  container.innerHTML = '';
+
+  for (let i = 5; i >= 0; i--) {
+    const yao = d.yao_lines[i];
+    const row = document.createElement('div');
+    row.className = 'hex-line-row';
+    const isChanging = changingPositions[yao.position];
+    if (isChanging) row.classList.add('changing');
+
+    const posLabels = ['初', '二', '三', '四', '五', '上'];
+    const yinYang = yao.is_yang ? '九' : '六';
+    const lineName = yao.position === 1 ? '初' + yinYang :
+                     yao.position === 6 ? '上' + yinYang :
+                     yinYang + posLabels[yao.position - 1];
+
+    const lineSymbol = yao.is_yang
+      ? '<span class="line-yang"></span>'
+      : '<span class="line-yin"><span></span><span></span></span>';
+
+    let changeMarker = '';
+    if (isChanging) {
+      if (isChanging.four_image === 'old_yang') {
+        changeMarker = '<span class="line-change-marker yang-change">→</span>';
+      } else {
+        changeMarker = '<span class="line-change-marker yin-change">→</span>';
+      }
+    }
+
+    const lc = lineChoicesMap[yao.position];
+    const fiLabel = lc ? `<span class="line-fi-label">${lc.label}</span>` : '';
+
+    // Separator between lower and upper trigrams
+    if (i === 2) {
+      const sep = document.createElement('div');
+      sep.className = 'hex-trigram-sep';
+      container.appendChild(sep);
+    }
+
+    row.innerHTML = `
+      <span class="line-label">${lineName}</span>
+      <span class="line-draw">${lineSymbol}</span>
+      ${changeMarker}
+      ${fiLabel}
+    `;
+    container.appendChild(row);
+  }
+}
+
+function renderPositionHex(d, changingPositions) {
+  const container = document.getElementById('positionHexInteractive');
+  container.innerHTML = '';
+
+  const stageLabels = ['潜伏期', '显现期', '危险期', '跃迁期', '巅峰期', '过度期'];
+  const stageDescs = ['还没开始', '开始被看到', '最容易犯错', '要不要跳', '最好的位置', '该收了'];
+
+  for (let i = 5; i >= 0; i--) {
+    const yao = d.yao_lines[i];
+    const pos = yao.position;
+    const isChanging = changingPositions[pos];
+
+    const row = document.createElement('div');
+    row.className = 'pos-hex-row';
+    if (isChanging) row.classList.add('pos-changing');
+    row.onclick = () => selectPositionFromHex(pos, row, d);
+
+    const lineSymbol = yao.is_yang
+      ? '<span class="pos-line-yang"></span>'
+      : '<span class="pos-line-yin"><span></span><span></span></span>';
+
+    row.innerHTML = `
+      <span class="pos-num">${pos}</span>
+      <span class="pos-line-draw">${lineSymbol}</span>
+      <span class="pos-stage-label">${stageLabels[pos-1]}</span>
+      <span class="pos-stage-desc">${stageDescs[pos-1]}</span>
+    `;
+
+    // Separator
+    if (i === 2) {
+      const sep = document.createElement('div');
+      sep.className = 'pos-hex-sep';
+      container.appendChild(sep);
+    }
+
+    container.appendChild(row);
+  }
+}
+
+function selectPositionFromHex(pos, row, d) {
+  document.querySelectorAll('.pos-hex-row').forEach(r => r.classList.remove('selected'));
+  row.classList.add('selected');
+
+  const yao = d.yao_lines.find(y => y.position === pos);
+  if (!yao) return;
+
+  const stageLabels = ['潜伏期', '显现期', '危险期', '跃迁期', '巅峰期', '过度期'];
+  const posLabels = ['初', '二', '三', '四', '五', '上'];
+  const yinYang = yao.is_yang ? '九' : '六';
+  const lineName = pos === 1 ? '初' + yinYang :
+                   pos === 6 ? '上' + yinYang :
+                   yinYang + posLabels[pos - 1];
+
+  const changingPositions = {};
+  d.changing_lines.forEach(c => { changingPositions[c.position] = c; });
+  const isChanging = changingPositions[pos];
+
+  const detail = document.getElementById('positionDetail');
+  detail.classList.remove('hidden');
+
+  document.getElementById('posDetailHeader').innerHTML =
+    `<span class="pos-detail-name">${lineName}</span>` +
+    `<span class="pos-detail-stage">${stageLabels[pos - 1]}</span>`;
+
+  document.getElementById('posDetailClassical').textContent = yao.classical;
+  document.getElementById('posDetailInterp').textContent = yao.interpretation;
+  document.getElementById('posDetailAdvice').textContent = yao.advice;
+
+  const changingEl = document.getElementById('posDetailChanging');
+  if (isChanging) {
+    changingEl.classList.remove('hidden');
+    const fiLabel = isChanging.four_image === 'old_yang' ? '太阳(阳极将变阴)' : '太阴(阴极将变阳)';
+    changingEl.innerHTML = `<strong>此爻为变爻 [${fiLabel}]</strong><br>${isChanging.reason}`;
+  } else {
+    changingEl.classList.add('hidden');
+  }
+}
+
+function renderYaoList(d, changingPositions, lineChoicesMap) {
+  const yaoList = document.getElementById('yaoList');
+  yaoList.innerHTML = '';
+  d.yao_lines.forEach(y => {
+    const isChanging = changingPositions[y.position];
+    const posLabels = ['初', '二', '三', '四', '五', '上'];
+    const yinYang = y.is_yang ? '九' : '六';
+    const lineName = y.position === 1 ? '初' + yinYang :
+                     y.position === 6 ? '上' + yinYang :
+                     yinYang + posLabels[y.position - 1];
+
+    const lc = lineChoicesMap[y.position];
+    const fiTag = lc ? `<span class="yao-fi-tag fi-tag-${lc.four_image.replace('_','-')}">${lc.label}</span>` : '';
+
+    const div = document.createElement('div');
+    div.className = 'yao-card' + (isChanging ? ' yao-changing' : '');
+    div.innerHTML = `
+      <div class="yao-header">
+        <span class="yao-pos">${lineName}</span>
+        <span class="yao-type">${y.is_yang ? '阳爻 ━━━' : '阴爻 ━ ━'}</span>
+        ${fiTag}
+        ${isChanging ? '<span class="yao-change-tag">变爻</span>' : ''}
+      </div>
+      <div class="yao-classical">${y.classical}</div>
+      <div class="yao-interp">${y.interpretation}</div>
+      <div class="yao-advice">${y.advice}</div>
+    `;
+    yaoList.appendChild(div);
+  });
+}
+
+function renderChangingSection(d, changingPositions) {
+  const cs = document.getElementById('changingSection');
+  if (d.changing_lines.length > 0) {
+    cs.classList.remove('hidden');
+    const cl = document.getElementById('changingList');
+    cl.innerHTML = '';
+    d.changing_lines.forEach(c => {
+      const div = document.createElement('div');
+      div.className = 'changing-card';
+      const fromLabel = c.from_yang ? '阳 ━━━' : '阴 ━ ━';
+      const toLabel = c.to_yang ? '阳 ━━━' : '阴 ━ ━';
+      const fiLabel = c.four_image === 'old_yang' ? '太阳' : '太阴';
+      div.innerHTML = `
+        <div class="changing-pos">第${c.position}爻变动 · ${fiLabel}</div>
+        <div class="changing-transform">${fromLabel} → ${toLabel}</div>
+        <div class="changing-reason">${c.reason}</div>
+      `;
+      cl.appendChild(div);
+    });
+
+    const th = document.getElementById('transformedHex');
+    if (d.transformed) {
+      th.classList.remove('hidden');
+      const tGuaCi = d.transformed.gua_ci ? `<div class="transformed-guaci">${d.transformed.gua_ci}</div>` : '';
+      document.getElementById('transformedInfo').innerHTML = `
+        <div class="transformed-name">第${d.transformed.number}卦 ${d.transformed.full_name}</div>
+        ${tGuaCi}
+        <div class="transformed-desc">${d.transformed.structure}</div>
+        <div class="transformed-action">${d.transformed.strategy}</div>
+        <div class="transformed-direction">${d.transformed.direction}</div>
+      `;
+    } else { th.classList.add('hidden'); }
+  } else { cs.classList.add('hidden'); }
+}
+
+function renderReflection(d, h) {
+  const blindSpotsLabel = document.getElementById('blindSpotsLabel');
+  blindSpotsLabel.textContent = currentRole.name + '常见盲区';
+  const bsList = document.getElementById('blindSpotsList');
+  bsList.innerHTML = '';
+  (d.bias.blind_spots || []).forEach(bs => {
+    const li = document.createElement('li');
+    li.textContent = bs;
+    bsList.appendChild(li);
+  });
+
+  const refCard = document.getElementById('reflectionCard');
+  const refList = document.getElementById('reflectionList');
+  refList.innerHTML = '';
+  const refQs = d.bias.reflection_questions || h.reflection_questions || [];
+  if (refQs.length > 0) {
+    refCard.classList.remove('hidden');
+    refQs.forEach(q => {
+      const li = document.createElement('li');
+      li.textContent = q;
+      refList.appendChild(li);
+    });
+  } else { refCard.classList.add('hidden'); }
+
+  const contrastCard = document.getElementById('contrastCard');
+  if (d.bias.contrast) {
+    contrastCard.classList.remove('hidden');
+    document.getElementById('contrastText').textContent = d.bias.contrast;
+  } else { contrastCard.classList.add('hidden'); }
+
+  document.getElementById('innerBias').textContent = d.bias.inner;
+  document.getElementById('outerBias').textContent = d.bias.outer;
+  document.getElementById('opponent').textContent = d.bias.opponent;
+}
+
+function buildShareText(d, h) {
+  const changingInfo = d.changing_lines.length > 0
+    ? `变爻：${d.changing_lines.map(c => '第' + c.position + '爻(' + (c.four_image === 'old_yang' ? '太阳' : '太阴') + ')').join('、')}`
+    : '无变爻';
+  const transformedInfo = d.transformed ? `变卦：${d.transformed.full_name}` : '';
+
+  document.getElementById('shareText').value = `【易经情境诊断】
+角色：${currentRole.name}
+卦象：第${h.number}卦 ${h.full_name}
+${h.gua_ci ? '卦辞：' + h.gua_ci : ''}
+${changingInfo}
+${transformedInfo}
+风险：${d.risk_level}
+
+卦义：${h.core_meaning.substring(0, 100)}...
+策略：${h.strategy.substring(0, 100)}...
+
+${d.action_summary}`;
+}
+
+/* =============================================
+   TABS
+   ============================================= */
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* =============================================
+   SHARE
+   ============================================= */
+function copyShare() {
+  const textarea = document.getElementById('shareText');
+  textarea.select();
+  navigator.clipboard.writeText(textarea.value).then(() => {
+    const btn = event.currentTarget;
+    btn.textContent = '已复制!';
+    setTimeout(() => { btn.textContent = '复制诊断摘要'; }, 2000);
+  }).catch(() => {
+    document.execCommand('copy');
+  });
+}
+
+/* =============================================
+   RESET
+   ============================================= */
+function resetAll() {
+  for (let i = 1; i <= 6; i++) delete selections['line' + i];
+  currentDiagnosisData = null;
+  document.getElementById('result').classList.add('hidden');
+  document.getElementById('inputSection').classList.remove('hidden');
+
+  // Reset option pills
+  document.querySelectorAll('.opt-pill').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('[id^="qCheck"]').forEach(c => c.classList.add('hidden'));
+  updateProgress();
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+init();
+</script>
+</body>
+</html>
