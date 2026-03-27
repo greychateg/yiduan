@@ -79,17 +79,32 @@
 
     <!-- Role Interpretation — MOST PROMINENT -->
     <section class="role-interp-section" id="roleInterpSection">
-      <h3 class="role-interp-title" id="roleInterpTitle">角色解读</h3>
+      <div class="role-interp-header">
+        <h3 class="role-interp-title" id="roleInterpTitle">角色解读</h3>
+        <div class="role-interp-hex-subtitle" id="roleInterpSubtitle"></div>
+      </div>
       <div class="role-interp-card">
         <div class="role-interp-bridge" id="roleInterpBridge"></div>
         <div class="role-interp-action">
-          <strong>行动指引：</strong>
-          <span id="roleInterpAction"></span>
+          <span class="role-interp-action-icon">&#9654;</span>
+          <div>
+            <strong>行动指引</strong>
+            <p id="roleInterpAction"></p>
+          </div>
         </div>
-        <div class="role-interp-warning">
-          <strong>警惕：</strong>
-          <span id="roleInterpWarning"></span>
+        <div class="role-interp-warning" id="roleInterpWarningBox">
+          <span class="role-interp-warning-icon">&#9888;</span>
+          <div>
+            <strong>警惕</strong>
+            <p id="roleInterpWarning"></p>
+          </div>
         </div>
+      </div>
+      <!-- Connection to generic analysis -->
+      <div class="role-interp-connector">
+        <div class="connector-line"></div>
+        <span class="connector-label">以下为通用卦象分析</span>
+        <div class="connector-line"></div>
       </div>
     </section>
 
@@ -356,11 +371,31 @@ function renderQuestions() {
   }
 }
 
+const FOUR_IMAGE_MAP = {
+  'young_yang': {label: '少阳', nature: '稳定阳', cls: 'fi-young-yang'},
+  'old_yang': {label: '太阳', nature: '极阳将变', cls: 'fi-old-yang'},
+  'young_yin': {label: '少阴', nature: '稳定阴', cls: 'fi-young-yin'},
+  'old_yin': {label: '太阴', nature: '极阴将变', cls: 'fi-old-yin'},
+};
+
 function selectOption(qNum, key, btn) {
-  // Deselect siblings
-  btn.parentElement.querySelectorAll('.opt-pill').forEach(p => p.classList.remove('active'));
+  // Deselect siblings and remove old 四象 tags
+  btn.parentElement.querySelectorAll('.opt-pill').forEach(p => {
+    p.classList.remove('active');
+    const oldTag = p.querySelector('.opt-fi-tag');
+    if (oldTag) oldTag.remove();
+  });
   btn.classList.add('active');
   selections['line' + qNum] = key;
+
+  // Add 四象 tag to selected option
+  const fi = FOUR_IMAGE_MAP[key];
+  if (fi) {
+    const tag = document.createElement('span');
+    tag.className = 'opt-fi-tag ' + fi.cls;
+    tag.textContent = fi.label;
+    btn.appendChild(tag);
+  }
 
   // Show check
   const check = document.getElementById('qCheck' + qNum);
@@ -404,7 +439,18 @@ function randomCast() {
     const btns = document.querySelectorAll(`[data-q="${i}"]`);
     btns.forEach(b => {
       b.classList.remove('active');
-      if (b.dataset.key === chosen) b.classList.add('active');
+      const oldTag = b.querySelector('.opt-fi-tag');
+      if (oldTag) oldTag.remove();
+      if (b.dataset.key === chosen) {
+        b.classList.add('active');
+        const fi = FOUR_IMAGE_MAP[chosen];
+        if (fi) {
+          const tag = document.createElement('span');
+          tag.className = 'opt-fi-tag ' + fi.cls;
+          tag.textContent = fi.label;
+          b.appendChild(tag);
+        }
+      }
     });
     const check = document.getElementById('qCheck' + i);
     check.classList.remove('hidden');
@@ -508,6 +554,29 @@ function renderResult(d) {
     document.getElementById('roleInterpSection').classList.remove('hidden');
     const roleName = currentRole ? currentRole.name : '角色';
     document.getElementById('roleInterpTitle').textContent = roleName + '解读';
+    // Hexagram subtitle with classical name meaning
+    const hexMeanings = {
+      '乾': '刚健之道', '坤': '柔顺之道', '屯': '起步之难', '蒙': '启蒙之道',
+      '需': '等待之道', '讼': '争讼之道', '师': '统帅之道', '比': '亲近之道',
+      '小畜': '蓄势之道', '履': '践行之道', '泰': '通泰之道', '否': '闭塞之道',
+      '同人': '同心之道', '大有': '丰收之道', '谦': '谦逊之道', '豫': '预备之道',
+      '随': '跟随之道', '蛊': '整治之道', '临': '临近之道', '观': '观察之道',
+      '噬嗑': '决断之道', '贲': '文饰之道', '剥': '剥落之道', '复': '回复之道',
+      '无妄': '正道之道', '大畜': '积蓄之道', '颐': '养育之道', '大过': '超越之道',
+      '坎': '险阻之道', '离': '附丽之道', '咸': '感应之道', '恒': '持久之道',
+      '遁': '退避之道', '大壮': '壮盛之道', '晋': '进取之道', '明夷': '韬晦之道',
+      '家人': '齐家之道', '睽': '乖离之道', '蹇': '困阻之道', '解': '解脱之道',
+      '损': '减损之道', '益': '增益之道', '夬': '决断之道', '姤': '遇合之道',
+      '萃': '聚合之道', '升': '上升之道', '困': '困厄之道', '井': '养源之道',
+      '革': '变革之道', '鼎': '革新之道', '震': '震动之道', '艮': '止静之道',
+      '渐': '渐进之道', '归妹': '归属之道', '丰': '丰盛之道', '旅': '旅行之道',
+      '巽': '顺势之道', '兑': '喜悦之道', '涣': '散开之道', '节': '节制之道',
+      '中孚': '诚信之道', '小过': '慎行之道', '既济': '完成之道', '未济': '未竟之道',
+    };
+    const subtitle = document.getElementById('roleInterpSubtitle');
+    const meaning = hexMeanings[h.name] || '';
+    subtitle.textContent = meaning ? `${h.name} — ${meaning}` : h.name;
+
     document.getElementById('roleInterpBridge').textContent = ri.core_bridge;
     document.getElementById('roleInterpAction').textContent = ri.action;
     document.getElementById('roleInterpWarning').textContent = ri.warning;
