@@ -1707,3 +1707,410 @@ header h1 {
   .pf-pills { flex-direction: column; }
   .pf-pill { text-align: center; }
 }
+
+/* =============================================
+   HEADER ACTIONS (Daily + History)
+   ============================================= */
+.header-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.header-btn {
+  padding: 6px 16px;
+  background: transparent;
+  border: 1px solid #333;
+  border-radius: 20px;
+  color: #888;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.header-btn:hover {
+  border-color: #d4a853;
+  color: #d4a853;
+}
+
+/* =============================================
+   ONE-LINER SECTION
+   ============================================= */
+.one-liner-section {
+  text-align: center;
+  padding: 16px 12px;
+  margin: 12px 0;
+}
+
+.one-liner-text {
+  font-size: 22px;
+  color: #d4a853;
+  font-weight: 500;
+  letter-spacing: 2px;
+  line-height: 1.6;
+}
+
+/* =============================================
+   CHANGING LINES — PROMINENT
+   ============================================= */
+.changing-prominent {
+  margin: 12px 0;
+}
+
+.changing-prominent-card {
+  background: #1a1520;
+  border-left: 3px solid #e8a838;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: 0 8px 8px 0;
+}
+
+.cp-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e8a838;
+  margin-bottom: 6px;
+}
+
+.cp-icon { margin-right: 4px; }
+
+.cp-meaning {
+  font-size: 13px;
+  color: #bbb;
+  line-height: 1.5;
+}
+
+/* =============================================
+   PRIMARY LINE (主爻)
+   ============================================= */
+.primary-line-section {
+  background: #141420;
+  border: 1px solid #2a2a3a;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 12px 0;
+}
+
+.primary-line-badge {
+  margin-bottom: 8px;
+}
+
+.pl-label {
+  display: inline-block;
+  background: #d4a853;
+  color: #0a0a0f;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-right: 8px;
+  letter-spacing: 1px;
+}
+
+.pl-desc {
+  font-size: 13px;
+  color: #ccc;
+}
+
+.primary-line-text {
+  font-size: 14px;
+  color: #aaa;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+/* =============================================
+   TRANSFORM TRANSITION
+   ============================================= */
+.transform-transition {
+  text-align: center;
+  padding: 16px;
+  margin: 12px 0;
+  background: #12121e;
+  border-radius: 10px;
+  border: 1px solid #222;
+}
+
+.transform-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.tt-from { color: #d4a853; }
+.tt-arrow { color: #666; font-size: 20px; }
+.tt-to { color: #a8d4e6; }
+
+.transform-meaning {
+  font-size: 13px;
+  color: #999;
+  line-height: 1.5;
+}
+
+/* =============================================
+   STRATEGY & RISK (Primary View)
+   ============================================= */
+.strategy-section, .risk-section {
+  margin: 16px 0;
+}
+
+.strategy-section h3, .risk-section h3 {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 6px;
+  letter-spacing: 1px;
+}
+
+.risk-text-bold {
+  font-size: 15px;
+  color: #e85050;
+  font-weight: 600;
+  line-height: 1.5;
+  padding: 10px 14px;
+  background: #1a1015;
+  border-left: 3px solid #e85050;
+  border-radius: 0 6px 6px 0;
+}
+
+/* =============================================
+   EXPAND / COLLAPSE SECTIONS
+   ============================================= */
+.expand-section {
+  margin: 16px 0;
+  border: 1px solid #1a1a2a;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.expand-toggle {
+  width: 100%;
+  padding: 14px 16px;
+  background: #111118;
+  border: none;
+  color: #999;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.expand-toggle:hover { color: #d4a853; background: #151520; }
+.expand-toggle.expanded { color: #d4a853; }
+
+.expand-arrow {
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.expand-content {
+  padding: 0 16px 16px;
+  background: #0d0d14;
+}
+
+/* =============================================
+   PRIMARY ACTIONS ROW
+   ============================================= */
+.primary-actions-row {
+  display: flex;
+  gap: 10px;
+  margin: 16px 0;
+  justify-content: center;
+}
+
+.share-card-btn, .primary-actions-row .share-inline-btn {
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid #333;
+  background: transparent;
+  color: #999;
+  transition: all 0.2s;
+}
+
+.share-card-btn:hover, .primary-actions-row .share-inline-btn:hover {
+  border-color: #d4a853;
+  color: #d4a853;
+}
+
+/* =============================================
+   SHARE CARD OVERLAY
+   ============================================= */
+.share-card-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.share-card {
+  background: #1a1a2a;
+  border: 1px solid #333;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+}
+
+.sc-symbols { font-size: 28px; margin-bottom: 8px; color: #d4a853; letter-spacing: 8px; }
+.sc-fullname { font-size: 22px; font-weight: 600; color: #e0e0e0; margin-bottom: 12px; }
+.sc-oneliner { font-size: 16px; color: #d4a853; margin-bottom: 16px; line-height: 1.5; }
+.sc-transformed { font-size: 13px; color: #a8d4e6; margin-bottom: 8px; }
+.sc-risk { font-size: 13px; color: #e85050; margin-bottom: 16px; }
+.sc-brand { font-size: 11px; color: #555; letter-spacing: 2px; border-top: 1px solid #333; padding-top: 12px; }
+
+.share-card-actions {
+  margin-top: 16px;
+}
+
+.share-card-actions button {
+  padding: 8px 24px;
+  background: transparent;
+  border: 1px solid #444;
+  border-radius: 20px;
+  color: #999;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+/* =============================================
+   DAILY OVERLAY
+   ============================================= */
+.daily-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.daily-card {
+  background: #1a1a2a;
+  border: 1px solid #333;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+}
+
+.daily-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.daily-date { font-size: 12px; color: #666; margin-bottom: 12px; letter-spacing: 2px; }
+.daily-hex-name { font-size: 24px; color: #d4a853; font-weight: 600; margin-bottom: 8px; }
+.daily-one-liner { font-size: 16px; color: #e0e0e0; margin-bottom: 16px; line-height: 1.5; }
+.daily-strategy { font-size: 13px; color: #999; line-height: 1.5; }
+.daily-transformed { font-size: 13px; color: #a8d4e6; margin-top: 12px; }
+
+/* =============================================
+   HISTORY OVERLAY
+   ============================================= */
+.history-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.history-panel {
+  background: #1a1a2a;
+  border: 1px solid #333;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.history-header h3 { color: #d4a853; font-size: 16px; }
+
+.history-header button {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.history-empty { color: #555; text-align: center; }
+
+.history-item {
+  padding: 10px 0;
+  border-bottom: 1px solid #222;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.hi-date { font-size: 12px; color: #666; }
+.hi-name { font-size: 14px; color: #e0e0e0; font-weight: 500; }
+.hi-arrow { color: #666; font-size: 12px; }
+.hi-trans { font-size: 14px; color: #a8d4e6; }
+.hi-liner { font-size: 12px; color: #888; width: 100%; margin-top: 2px; }
+
+/* =============================================
+   HEXAGRAM LINE ANIMATION
+   ============================================= */
+.hex-animated .hex-line-row {
+  opacity: 0;
+  animation: hexLineAppear 0.3s ease forwards;
+}
+
+@keyframes hexLineAppear {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Lines animate bottom-to-top with staggered delays */
+.hex-animated .hex-line-row:nth-child(1) { animation-delay: 1.0s; }
+.hex-animated .hex-line-row:nth-child(2) { animation-delay: 0.8s; }
+.hex-animated .hex-line-row:nth-child(3) { animation-delay: 0.6s; }
+/* separator is child 4 */
+.hex-animated .hex-trigram-sep { animation: none; opacity: 1; }
+.hex-animated .hex-line-row:nth-child(5) { animation-delay: 0.4s; }
+.hex-animated .hex-line-row:nth-child(6) { animation-delay: 0.2s; }
+.hex-animated .hex-line-row:nth-child(7) { animation-delay: 0.0s; }
+
+/* Mobile responsive */
+@media (max-width: 375px) {
+  .one-liner-text { font-size: 18px; }
+  .transform-visual { font-size: 15px; }
+  .share-card { padding: 24px 16px; }
+  .primary-actions-row { flex-direction: column; }
+}

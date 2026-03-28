@@ -1,12 +1,104 @@
 """Flask 路由。"""
 
+import hashlib
+import datetime
 from flask import Flask, render_template, request, jsonify
 from app.data.trigrams import TRIGRAMS, TRIGRAM_ORDER
 from app.data.roles import (
     ROLES, ROLE_ORDER, FOUR_IMAGE_LABELS,
 )
 from app.data.role_interpretations import get_role_interpretation
+from app.data.hexagrams import ONE_LINERS, HEXAGRAM_LOOKUP
 from app.engine.diagnosis import diagnose, FOUR_IMAGE_IS_YANG
+
+
+def _compute_primary_line(n_changing, changing_lines, hexagram, transformed, yao_lines, line_choices):
+    """根据传统变爻规则计算主爻。
+
+    规则：
+    - 0 变爻: 看主卦卦辞
+    - 1 变爻: 看那一爻的爻辞
+    - 2 变爻: 看下面（位置数字小的）那一爻
+    - 3 变爻: 看主卦卦辞 + 变卦卦辞
+    - 4 变爻: 看变卦中不变的下面那一爻
+    - 5 变爻: 看变卦中不变的那一爻
+    - 6 变爻: 看变卦卦辞（乾坤特殊：看用九/用六）
+    """
+    result = {
+        "rule": "",
+        "focus_position": None,
+        "focus_text": "",
+        "description": "",
+    }
+
+    if n_changing == 0:
+        result["rule"] = "zero"
+        result["description"] = "无变爻，以主卦卦辞为主"
+        result["focus_text"] = hexagram.gua_ci or hexagram.core_meaning
+    elif n_changing == 1:
+        cl = changing_lines[0]
+        result["rule"] = "one"
+        result["focus_position"] = cl.position
+        yao = next((y for y in yao_lines if y.position == cl.position), None)
+        result["description"] = f"一个变爻，以第{cl.position}爻爻辞为主"
+        result["focus_text"] = yao.classical + "——" + yao.interpretation if yao else ""
+    elif n_changing == 2:
+        # 看下面那一爻（位置数字小的）
+        positions = sorted([cl.position for cl in changing_lines])
+        focus_pos = positions[0]
+        result["rule"] = "two"
+        result["focus_position"] = focus_pos
+        yao = next((y for y in yao_lines if y.position == focus_pos), None)
+        result["description"] = f"两个变爻，以下方第{focus_pos}爻为主"
+        result["focus_text"] = yao.classical + "——" + yao.interpretation if yao else ""
+    elif n_changing == 3:
+        result["rule"] = "three"
+        result["description"] = "三个变爻，主卦卦辞与变卦卦辞并看"
+        main_ci = hexagram.gua_ci or hexagram.core_meaning
+        trans_ci = (transformed.gua_ci or transformed.core_meaning) if transformed else ""
+        result["focus_text"] = f"主卦：{main_ci}\n变卦：{trans_ci}"
+    elif n_changing == 4:
+        # 看变卦中不变的爻（下面那个）
+        changing_positions = {cl.position for cl in changing_lines}
+        unchanged = sorted([i for i in range(1, 7) if i not in changing_positions])
+        if unchanged:
+            focus_pos = unchanged[0]
+            result["rule"] = "four"
+            result["focus_position"] = focus_pos
+            result["description"] = f"四个变爻，以变卦中不变的第{focus_pos}爻为主"
+            result["focus_text"] = f"关注变卦第{focus_pos}爻的稳定含义"
+        else:
+            result["rule"] = "four"
+            result["description"] = "四个变爻，以变卦卦辞为主"
+    elif n_changing == 5:
+        # 看变卦中唯一不变的那一爻
+        changing_positions = {cl.position for cl in changing_lines}
+        unchanged = [i for i in range(1, 7) if i not in changing_positions]
+        if unchanged:
+            focus_pos = unchanged[0]
+            result["rule"] = "five"
+            result["focus_position"] = focus_pos
+            result["description"] = f"五个变爻，以变卦中唯一不变的第{focus_pos}爻为主"
+            result["focus_text"] = f"关注变卦第{focus_pos}爻——唯一不变的锚点"
+        else:
+            result["rule"] = "five"
+            result["description"] = "五个变爻，以变卦卦辞为主"
+    elif n_changing == 6:
+        result["rule"] = "six"
+        if hexagram.number == 1:
+            result["description"] = "六爻全变（乾），看用九"
+            result["focus_text"] = "用九：见群龙无首，吉。——不执着于做领头羊，反而大吉。"
+        elif hexagram.number == 2:
+            result["description"] = "六爻全变（坤），看用六"
+            result["focus_text"] = "用六：利永贞。——永远保持柔顺正道。"
+        else:
+            result["description"] = "六爻全变，以变卦卦辞为主"
+            if transformed:
+                result["focus_text"] = transformed.gua_ci or transformed.core_meaning
+            else:
+                result["focus_text"] = ""
+
+    return result
 
 
 def create_app() -> Flask:
@@ -68,6 +160,56 @@ def create_app() -> Flask:
             })
         return jsonify({
             "roles": result,
+        })
+
+    @app.route("/api/daily")
+    def daily_hexagram():
+        """今日一卦：基于日期的确定性随机卦象。"""
+        today = datetime.date.today().isoformat()
+        seed = hashlib.md5(today.encode()).hexdigest()
+
+        # 用seed生成6爻
+        four_images = ["young_yang", "old_yang", "young_yin", "old_yin"]
+        weights = [3, 1, 3, 1]  # 传统概率
+        lines = []
+        for i in range(6):
+            # 用seed的不同部分生成每爻
+            chunk = int(seed[i*4:(i+1)*4], 16)
+            total_weight = sum(weights)
+            r = chunk % total_weight
+            cumul = 0
+            chosen = four_images[0]
+            for j, w in enumerate(weights):
+                cumul += w
+                if r < cumul:
+                    chosen = four_images[j]
+                    break
+            lines.append(chosen)
+
+        try:
+            result = diagnose(*lines)
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+        h = result.hexagram
+        from app.data.hexagrams import ONE_LINERS as _ol
+        return jsonify({
+            "date": today,
+            "hexagram": {
+                "number": h.number,
+                "name": h.name,
+                "full_name": h.full_name,
+                "symbols": h.symbols,
+                "one_liner": h.one_liner or _ol.get(h.number, ""),
+                "gua_ci": h.gua_ci or "",
+                "strategy": h.strategy,
+                "risk": h.risk,
+            },
+            "changing_count": len(result.changing_lines),
+            "transformed": {
+                "full_name": result.transformed_hexagram.full_name,
+                "one_liner": result.transformed_hexagram.one_liner or _ol.get(result.transformed_hexagram.number, ""),
+            } if result.transformed_hexagram else None,
         })
 
     @app.route("/diagnose", methods=["POST"])
@@ -143,6 +285,7 @@ def create_app() -> Flask:
                 "strategy": th.strategy,
                 "direction": th.direction,
                 "gua_ci": th.gua_ci or "",
+                "one_liner": th.one_liner or ONE_LINERS.get(th.number, ""),
             }
 
         # 角色专属自省
@@ -180,6 +323,24 @@ def create_app() -> Flask:
                 "is_yang": FOUR_IMAGE_IS_YANG[choice],
             })
 
+        # 主爻判断逻辑 (传统易经规则)
+        n_changing = len(result.changing_lines)
+        primary_line_info = _compute_primary_line(
+            n_changing, result.changing_lines, h, result.transformed_hexagram,
+            result.yao_lines, result.line_choices
+        )
+
+        # 变卦过渡描述
+        transition_meaning = ""
+        if result.transformed_hexagram:
+            th = result.transformed_hexagram
+            t_liner = th.one_liner or ONE_LINERS.get(th.number, "")
+            h_liner = h.one_liner or ONE_LINERS.get(h.number, "")
+            transition_meaning = (
+                f"从「{h.full_name}」走向「{th.full_name}」"
+                + f"——从\u201c{h_liner}\u201d到\u201c{t_liner}\u201d。"
+            )
+
         return jsonify({
             "hexagram": {
                 "number": h.number,
@@ -197,6 +358,7 @@ def create_app() -> Flask:
                 "key_yao": h.key_yao or "",
                 "is_detailed": h.is_detailed,
                 "reflection_questions": reflection_questions,
+                "one_liner": h.one_liner or ONE_LINERS.get(h.number, ""),
             },
             "role_interpretation": role_interpretation_data,
             "lower": {
@@ -223,6 +385,8 @@ def create_app() -> Flask:
             "upper_confidence": result.upper_confidence,
             "action_summary": result.action_summary,
             "risk_level": result.risk_level,
+            "primary_line": primary_line_info,
+            "transition_meaning": transition_meaning,
             "bias": {
                 "inner": lower_t.inner_bias,
                 "outer": upper_t.outer_bias,

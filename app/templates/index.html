@@ -3,15 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>易经情境诊断</title>
+<title>易断 · 易经情境诊断</title>
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 <div class="container">
   <header>
-    <h1>易经情境诊断</h1>
-    <p class="subtitle">六爻四象 · 直指人心</p>
+    <h1>易断</h1>
+    <p class="subtitle">易经情境诊断 · 六爻四象 · 直指人心</p>
+    <div class="header-actions">
+      <button class="header-btn" id="dailyBtn" onclick="showDaily()">今日运势</button>
+      <button class="header-btn" id="historyBtn" onclick="showHistory()">历史</button>
+    </div>
   </header>
+
+  <!-- Daily fortune overlay -->
+  <div id="dailyOverlay" class="daily-overlay hidden">
+    <div class="daily-card" id="dailyCard">
+      <button class="daily-close" onclick="closeDaily()">&times;</button>
+      <div class="daily-date" id="dailyDate"></div>
+      <div class="daily-hex-name" id="dailyHexName"></div>
+      <div class="daily-one-liner" id="dailyOneLiner"></div>
+      <div class="daily-strategy" id="dailyStrategy"></div>
+      <div class="daily-transformed hidden" id="dailyTransformed"></div>
+    </div>
+  </div>
+
+  <!-- History overlay -->
+  <div id="historyOverlay" class="history-overlay hidden">
+    <div class="history-panel">
+      <div class="history-header">
+        <h3>诊断历史</h3>
+        <button onclick="closeHistory()">&times;</button>
+      </div>
+      <div class="history-list" id="historyList">
+        <p class="history-empty">暂无历史记录</p>
+      </div>
+    </div>
+  </div>
 
   <!-- ============================================= -->
   <!-- INPUT SECTION: single-page questionnaire      -->
@@ -59,7 +88,10 @@
   <!-- RESULT SECTION                                -->
   <!-- ============================================= -->
   <div id="result" class="result hidden">
-    <!-- Hexagram header with calligraphy-style name -->
+
+    <!-- ===== PRIMARY VIEW (beginners see this) ===== -->
+
+    <!-- 1. Hexagram header with animation container -->
     <section class="hex-header">
       <div class="hex-name-block">
         <span class="hex-number" id="hexNumber"></span>
@@ -72,12 +104,51 @@
       </div>
     </section>
 
-    <!-- Gua Ci -->
+    <!-- 2. One-liner (THE single most important takeaway) -->
+    <section class="one-liner-section" id="oneLinerSection">
+      <div class="one-liner-text" id="oneLinerText"></div>
+    </section>
+
+    <!-- Hexagram visual with line-by-line animation -->
+    <section class="hex-visual">
+      <div class="hex-lines hex-animated" id="hexLines"></div>
+    </section>
+
+    <!-- 2b. Changing lines (shown RIGHT AFTER one-liner if any) -->
+    <section class="changing-prominent hidden" id="changingProminent">
+      <div id="changingProminentList"></div>
+    </section>
+
+    <!-- 2c. Primary Line Focus (主爻) -->
+    <section class="primary-line-section hidden" id="primaryLineSection">
+      <div class="primary-line-badge" id="primaryLineBadge"></div>
+      <div class="primary-line-text" id="primaryLineText"></div>
+    </section>
+
+    <!-- 2d. Transformed hexagram transition -->
+    <section class="transform-transition hidden" id="transformTransition">
+      <div class="transform-visual" id="transformVisual"></div>
+      <div class="transform-meaning" id="transformMeaning"></div>
+    </section>
+
+    <!-- 3. Gua Ci in plain language -->
     <section class="gua-ci-section hidden" id="guaCiSection">
       <blockquote class="gua-ci-text" id="guaCiText"></blockquote>
     </section>
 
-    <!-- Role Interpretation — MOST PROMINENT -->
+    <!-- 4. Strategy (你该怎么做) -->
+    <section class="strategy-section">
+      <h3>你该怎么做</h3>
+      <p id="strategy" class="strategy-text"></p>
+    </section>
+
+    <!-- 5. Risk (最大风险) — bold/red -->
+    <section class="risk-section">
+      <h3>最大风险</h3>
+      <p id="risk" class="risk-text-bold"></p>
+    </section>
+
+    <!-- Role Interpretation -->
     <section class="role-interp-section" id="roleInterpSection">
       <div class="role-interp-header">
         <h3 class="role-interp-title" id="roleInterpTitle">角色解读</h3>
@@ -100,214 +171,198 @@
           </div>
         </div>
       </div>
-      <!-- Connection to generic analysis -->
-      <div class="role-interp-connector">
-        <div class="connector-line"></div>
-        <span class="connector-label">以下为通用卦象分析</span>
-        <div class="connector-line"></div>
-      </div>
     </section>
 
-    <!-- Tab bar: 3 tabs only -->
-    <div class="tab-bar" id="tabBar">
-      <button class="tab-btn active" data-tab="tab-hexagram" onclick="switchTab('tab-hexagram', this)">卦象</button>
-      <button class="tab-btn" data-tab="tab-deep" onclick="switchTab('tab-deep', this)">深入</button>
-      <button class="tab-btn" data-tab="tab-reflect" onclick="switchTab('tab-reflect', this)">自省</button>
+    <!-- Share + actions row -->
+    <div class="primary-actions-row">
+      <button class="share-card-btn" onclick="showShareCard()">分享卡片</button>
+      <button class="share-inline-btn" onclick="copyShare()">复制摘要</button>
     </div>
 
-    <!-- ==================== TAB 1: 卦象 ==================== -->
-    <div class="tab-content active" id="tab-hexagram">
+    <!-- ===== EXPANDABLE: 想深入了解？ ===== -->
+    <div class="expand-section">
+      <button class="expand-toggle" onclick="toggleExpand('expandAnalysis', this)">
+        想深入了解？ <span class="expand-arrow">&#9662;</span>
+      </button>
 
-      <!-- Hexagram visual -->
-      <section class="hex-visual">
-        <div class="hex-lines" id="hexLines"></div>
-      </section>
+      <div class="expand-content hidden" id="expandAnalysis">
 
-      <!-- Warnings -->
-      <section class="warnings hidden" id="warningsSection">
-        <h3>变爻提示</h3>
-        <ul id="warningsList"></ul>
-      </section>
+        <!-- Core meaning -->
+        <section class="meaning-section">
+          <h3>卦义核心</h3>
+          <p id="coreMeaning" class="meaning-text"></p>
+        </section>
 
-      <!-- Core meaning -->
-      <section class="meaning-section">
-        <h3>卦义核心</h3>
-        <p id="coreMeaning" class="meaning-text"></p>
-      </section>
+        <!-- Situation -->
+        <section class="meaning-section">
+          <h3>当前处境</h3>
+          <p id="situation" class="situation-text"></p>
+        </section>
 
-      <!-- Situation -->
-      <section class="meaning-section">
-        <h3>当前处境</h3>
-        <p id="situation" class="situation-text"></p>
-      </section>
-
-      <!-- Strategy -->
-      <section class="meaning-section">
-        <h3>最佳策略</h3>
-        <p id="strategy" class="strategy-text"></p>
-      </section>
-
-      <!-- Risk -->
-      <section class="meaning-section">
-        <h3>关键风险</h3>
-        <p id="risk" class="risk-text"></p>
-      </section>
-
-      <!-- Action summary -->
-      <section class="action-summary">
-        <div class="action-box">
-          <div class="action-header">
-            <span class="action-title">行动建议</span>
+        <!-- Action summary -->
+        <section class="action-summary">
+          <div class="action-box">
+            <div class="action-header">
+              <span class="action-title">行动建议</span>
+            </div>
+            <p id="actionSummary"></p>
           </div>
-          <p id="actionSummary"></p>
-        </div>
-      </section>
+        </section>
 
-      <!-- Share button at bottom of tab -->
-      <div class="tab-share-row">
-        <button class="share-inline-btn" onclick="copyShare()">复制诊断摘要</button>
+        <!-- Direction -->
+        <section class="meaning-section">
+          <h3>变化方向</h3>
+          <p id="direction" class="direction-text"></p>
+        </section>
+
+        <!-- Key yao -->
+        <section class="extra hidden" id="keyYaoSection">
+          <h3>关键爻辞</h3>
+          <p id="keyYao"></p>
+        </section>
+
+        <!-- Structure -->
+        <section class="structure-section">
+          <h3>卦象结构</h3>
+          <p id="structure"></p>
+        </section>
+
       </div>
     </div>
 
-    <!-- ==================== TAB 2: 深入 ==================== -->
-    <div class="tab-content" id="tab-deep">
+    <!-- ===== EXPANDABLE: 六爻详解 ===== -->
+    <div class="expand-section">
+      <button class="expand-toggle" onclick="toggleExpand('expandYao', this)">
+        六爻详解 <span class="expand-arrow">&#9662;</span>
+      </button>
+      <div class="expand-content hidden" id="expandYao">
 
-      <!-- Guided Position Finder -->
-      <section class="position-finder-section" id="positionFinderSection">
-        <h3>找到你的位置</h3>
-        <p class="position-hint">回答 3 个快速问题，定位你所处的阶段</p>
-        <div class="pf-questions" id="pfQuestions">
-          <div class="pf-q" data-pf="A">
-            <div class="pf-q-title">这件事你已经投入了多少？</div>
-            <div class="pf-pills">
-              <button class="pf-pill" data-scores="1,2" onclick="pfSelect(this)">还没开始 / 刚起步</button>
-              <button class="pf-pill" data-scores="3,4" onclick="pfSelect(this)">已投入一段时间</button>
-              <button class="pf-pill" data-scores="5,6" onclick="pfSelect(this)">深度参与 / 接近尾声</button>
+        <!-- Guided Position Finder -->
+        <section class="position-finder-section" id="positionFinderSection">
+          <h3>找到你的位置</h3>
+          <p class="position-hint">回答 3 个快速问题，定位你所处的阶段</p>
+          <div class="pf-questions" id="pfQuestions">
+            <div class="pf-q" data-pf="A">
+              <div class="pf-q-title">这件事你已经投入了多少？</div>
+              <div class="pf-pills">
+                <button class="pf-pill" data-scores="1,2" onclick="pfSelect(this)">还没开始 / 刚起步</button>
+                <button class="pf-pill" data-scores="3,4" onclick="pfSelect(this)">已投入一段时间</button>
+                <button class="pf-pill" data-scores="5,6" onclick="pfSelect(this)">深度参与 / 接近尾声</button>
+              </div>
+            </div>
+            <div class="pf-q" data-pf="B">
+              <div class="pf-q-title">你现在最大的感受是？</div>
+              <div class="pf-pills">
+                <button class="pf-pill" data-scores="1" onclick="pfSelect(this)">迷茫，不知道方向</button>
+                <button class="pf-pill" data-scores="2" onclick="pfSelect(this)">有基础但在积累</button>
+                <button class="pf-pill" data-scores="3" onclick="pfSelect(this)">焦虑，在十字路口</button>
+                <button class="pf-pill" data-scores="4" onclick="pfSelect(this)">在适应新阶段</button>
+                <button class="pf-pill" data-scores="5" onclick="pfSelect(this)">掌控感强，在主导</button>
+                <button class="pf-pill" data-scores="6" onclick="pfSelect(this)">差不多了，考虑收尾</button>
+              </div>
+            </div>
+            <div class="pf-q" data-pf="C">
+              <div class="pf-q-title">你需要的建议更偏向？</div>
+              <div class="pf-pills">
+                <button class="pf-pill" data-scores="1,2" onclick="pfSelect(this)">怎么开始</button>
+                <button class="pf-pill" data-scores="3,4" onclick="pfSelect(this)">怎么过渡/转型</button>
+                <button class="pf-pill" data-scores="5,6" onclick="pfSelect(this)">怎么收场</button>
+              </div>
             </div>
           </div>
-          <div class="pf-q" data-pf="B">
-            <div class="pf-q-title">你现在最大的感受是？</div>
-            <div class="pf-pills">
-              <button class="pf-pill" data-scores="1" onclick="pfSelect(this)">迷茫，不知道方向</button>
-              <button class="pf-pill" data-scores="2" onclick="pfSelect(this)">有基础但在积累</button>
-              <button class="pf-pill" data-scores="3" onclick="pfSelect(this)">焦虑，在十字路口</button>
-              <button class="pf-pill" data-scores="4" onclick="pfSelect(this)">在适应新阶段</button>
-              <button class="pf-pill" data-scores="5" onclick="pfSelect(this)">掌控感强，在主导</button>
-              <button class="pf-pill" data-scores="6" onclick="pfSelect(this)">差不多了，考虑收尾</button>
-            </div>
+          <div class="pf-result hidden" id="pfResult">
+            <span class="pf-result-text" id="pfResultText"></span>
           </div>
-          <div class="pf-q" data-pf="C">
-            <div class="pf-q-title">你需要的建议更偏向？</div>
-            <div class="pf-pills">
-              <button class="pf-pill" data-scores="1,2" onclick="pfSelect(this)">怎么开始</button>
-              <button class="pf-pill" data-scores="3,4" onclick="pfSelect(this)">怎么过渡/转型</button>
-              <button class="pf-pill" data-scores="5,6" onclick="pfSelect(this)">怎么收场</button>
-            </div>
+        </section>
+
+        <!-- Position selector — interactive hexagram -->
+        <section class="position-section">
+          <h3>你在哪个位置？</h3>
+          <p class="position-hint">点击卦象中的爻线，查看对应阶段的分析</p>
+          <div class="position-hex-interactive" id="positionHexInteractive"></div>
+          <div class="position-detail hidden" id="positionDetail">
+            <div class="pos-detail-header" id="posDetailHeader"></div>
+            <div class="pos-detail-classical" id="posDetailClassical"></div>
+            <div class="pos-detail-interp" id="posDetailInterp"></div>
+            <div class="pos-detail-advice" id="posDetailAdvice"></div>
+            <div class="pos-detail-changing hidden" id="posDetailChanging"></div>
           </div>
-        </div>
-        <div class="pf-result hidden" id="pfResult">
-          <span class="pf-result-text" id="pfResultText"></span>
-        </div>
-      </section>
+        </section>
 
-      <!-- Position selector — interactive hexagram -->
-      <section class="position-section">
-        <h3>你在哪个位置？</h3>
-        <p class="position-hint">点击卦象中的爻线，查看对应阶段的分析</p>
-        <div class="position-hex-interactive" id="positionHexInteractive"></div>
-        <div class="position-detail hidden" id="positionDetail">
-          <div class="pos-detail-header" id="posDetailHeader"></div>
-          <div class="pos-detail-classical" id="posDetailClassical"></div>
-          <div class="pos-detail-interp" id="posDetailInterp"></div>
-          <div class="pos-detail-advice" id="posDetailAdvice"></div>
-          <div class="pos-detail-changing hidden" id="posDetailChanging"></div>
-        </div>
-      </section>
+        <!-- Yao detail -->
+        <section class="yao-detail">
+          <h3>六爻详解</h3>
+          <div id="yaoList"></div>
+        </section>
 
-      <!-- Yao detail (collapsed by default) -->
-      <section class="yao-detail">
-        <h3>六爻详解</h3>
-        <div id="yaoList"></div>
-      </section>
+        <!-- Changing lines / transformed hexagram (detailed) -->
+        <section class="changing-section hidden" id="changingSection">
+          <h3>变爻与变卦（详细）</h3>
+          <div id="changingList"></div>
+          <div class="transformed-hex hidden" id="transformedHex">
+            <h4>变卦</h4>
+            <div id="transformedInfo"></div>
+          </div>
+        </section>
 
-      <!-- Changing lines / transformed hexagram -->
-      <section class="changing-section hidden" id="changingSection">
-        <h3>变爻与变卦</h3>
-        <div id="changingList"></div>
-        <div class="transformed-hex hidden" id="transformedHex">
-          <h4>变卦</h4>
-          <div id="transformedInfo"></div>
-        </div>
-      </section>
-
-      <!-- Direction -->
-      <section class="meaning-section">
-        <h3>变化方向</h3>
-        <p id="direction" class="direction-text"></p>
-      </section>
-
-      <!-- Key yao -->
-      <section class="extra hidden" id="keyYaoSection">
-        <h3>关键爻辞</h3>
-        <p id="keyYao"></p>
-      </section>
-
-      <!-- Structure -->
-      <section class="structure-section">
-        <h3>卦象结构</h3>
-        <p id="structure"></p>
-      </section>
-
-      <div class="tab-share-row">
-        <button class="share-inline-btn" onclick="copyShare()">复制诊断摘要</button>
       </div>
     </div>
 
-    <!-- ==================== TAB 3: 自省 ==================== -->
-    <div class="tab-content" id="tab-reflect">
-      <section class="bias">
-        <h3>反偏差自省</h3>
+    <!-- ===== EXPANDABLE: 自省校验 ===== -->
+    <div class="expand-section">
+      <button class="expand-toggle" onclick="toggleExpand('expandReflect', this)">
+        自省校验 <span class="expand-arrow">&#9662;</span>
+      </button>
+      <div class="expand-content hidden" id="expandReflect">
+        <section class="bias">
 
-        <!-- Role blind spots -->
-        <div class="bias-card" id="blindSpotsCard">
-          <div class="bias-label" id="blindSpotsLabel">角色盲区</div>
-          <ul id="blindSpotsList"></ul>
-        </div>
+          <!-- Role blind spots -->
+          <div class="bias-card" id="blindSpotsCard">
+            <div class="bias-label" id="blindSpotsLabel">角色盲区</div>
+            <ul id="blindSpotsList"></ul>
+          </div>
 
-        <!-- Reflection questions -->
-        <div class="bias-card hidden" id="reflectionCard">
-          <div class="bias-label">卦象反思</div>
-          <ul id="reflectionList"></ul>
-        </div>
+          <!-- Reflection questions -->
+          <div class="bias-card hidden" id="reflectionCard">
+            <div class="bias-label">卦象反思</div>
+            <ul id="reflectionList"></ul>
+          </div>
 
-        <!-- Contrast analysis -->
-        <div class="bias-card hidden" id="contrastCard">
-          <div class="bias-label">对立面思考</div>
-          <p id="contrastText"></p>
-        </div>
+          <!-- Contrast analysis -->
+          <div class="bias-card hidden" id="contrastCard">
+            <div class="bias-label">对立面思考</div>
+            <p id="contrastText"></p>
+          </div>
 
-        <div class="bias-card">
-          <div class="bias-label">下卦自省（内在状态）</div>
-          <p id="innerBias"></p>
-        </div>
-        <div class="bias-card">
-          <div class="bias-label">上卦自省（外部环境）</div>
-          <p id="outerBias"></p>
-        </div>
-        <div class="bias-card">
-          <div class="bias-label">对手视角反转</div>
-          <p id="opponent"></p>
-        </div>
-      </section>
-
-      <div class="tab-share-row">
-        <button class="share-inline-btn" onclick="copyShare()">复制诊断摘要</button>
+          <div class="bias-card">
+            <div class="bias-label">下卦自省（内在状态）</div>
+            <p id="innerBias"></p>
+          </div>
+          <div class="bias-card">
+            <div class="bias-label">上卦自省（外部环境）</div>
+            <p id="outerBias"></p>
+          </div>
+          <div class="bias-card">
+            <div class="bias-label">对手视角反转</div>
+            <p id="opponent"></p>
+          </div>
+        </section>
       </div>
     </div>
 
     <!-- Bottom actions -->
     <div class="bottom-actions">
       <button class="reset-btn" onclick="resetAll()">重新诊断</button>
+    </div>
+  </div>
+
+  <!-- Share card overlay -->
+  <div id="shareCardOverlay" class="share-card-overlay hidden">
+    <div class="share-card" id="shareCard">
+      <div class="share-card-inner" id="shareCardInner"></div>
+      <div class="share-card-actions">
+        <button onclick="closeShareCard()">关闭</button>
+      </div>
     </div>
   </div>
 </div>
@@ -625,22 +680,84 @@ function renderResult(d) {
   const levelMap = {'低':'low','中':'mid','高':'high','极高':'extreme'};
   riskBadge.dataset.level = levelMap[d.risk_level] || 'mid';
 
+  // One-liner
+  const oneLiner = h.one_liner || '';
+  document.getElementById('oneLinerText').textContent = oneLiner;
+
+  // Build changing positions lookup
+  const changingPositions = {};
+  d.changing_lines.forEach(c => { changingPositions[c.position] = c; });
+  const lineChoicesMap = {};
+  if (d.line_choices) {
+    d.line_choices.forEach(lc => { lineChoicesMap[lc.position] = lc; });
+  }
+
+  // Hexagram visual (with animation)
+  renderHexagramVisual(d, changingPositions, lineChoicesMap);
+
+  // Changing lines — PROMINENT (right after one-liner)
+  const cpSection = document.getElementById('changingProminent');
+  const cpList = document.getElementById('changingProminentList');
+  cpList.innerHTML = '';
+  if (d.changing_lines.length > 0) {
+    cpSection.classList.remove('hidden');
+    const posNames = ['起点/基础', '内在核心', '转折/危机', '外部适应', '核心判断', '结果/趋势'];
+    d.changing_lines.forEach(c => {
+      const fromLabel = c.four_image === 'old_yang' ? '太阳' : '太阴';
+      const fromYY = c.from_yang ? '阳' : '阴';
+      const toYY = c.to_yang ? '阳' : '阴';
+      const meaning = c.four_image === 'old_yang'
+        ? `你的${posNames[c.position-1]}虽然极强，但正在发生转变——盛极必衰的信号。`
+        : `你的${posNames[c.position-1]}虽然极弱，但触底反弹正在发生——否极泰来。`;
+      const div = document.createElement('div');
+      div.className = 'changing-prominent-card';
+      div.innerHTML = `
+        <div class="cp-header"><span class="cp-icon">&#9889;</span> 第${c.position}爻变动（${fromLabel}：${fromYY}&#8594;${toYY}）</div>
+        <div class="cp-meaning">${meaning}</div>
+      `;
+      cpList.appendChild(div);
+    });
+  } else { cpSection.classList.add('hidden'); }
+
+  // Primary line (主爻)
+  const pl = d.primary_line;
+  const plSection = document.getElementById('primaryLineSection');
+  if (pl && pl.description) {
+    plSection.classList.remove('hidden');
+    document.getElementById('primaryLineBadge').innerHTML =
+      `<span class="pl-label">主爻</span> <span class="pl-desc">${pl.description}</span>`;
+    document.getElementById('primaryLineText').textContent = pl.focus_text || '';
+  } else { plSection.classList.add('hidden'); }
+
+  // Transform transition
+  const ttSection = document.getElementById('transformTransition');
+  if (d.transformed && d.transition_meaning) {
+    ttSection.classList.remove('hidden');
+    const tOneLiner = d.transformed.one_liner || '';
+    document.getElementById('transformVisual').innerHTML =
+      `<span class="tt-from">${h.full_name}</span>` +
+      `<span class="tt-arrow">&#10132;</span>` +
+      `<span class="tt-to">${d.transformed.full_name}</span>`;
+    document.getElementById('transformMeaning').textContent = d.transition_meaning;
+  } else { ttSection.classList.add('hidden'); }
+
   // Gua Ci
   const gcSection = document.getElementById('guaCiSection');
   if (h.gua_ci) {
     gcSection.classList.remove('hidden');
     document.getElementById('guaCiText').textContent = h.gua_ci;
-  } else {
-    gcSection.classList.add('hidden');
-  }
+  } else { gcSection.classList.add('hidden'); }
 
-  // Role Interpretation — PROMINENT
+  // Strategy & Risk
+  document.getElementById('strategy').textContent = h.strategy;
+  document.getElementById('risk').textContent = h.risk;
+
+  // Role Interpretation
   const ri = d.role_interpretation;
   if (ri) {
     document.getElementById('roleInterpSection').classList.remove('hidden');
     const roleName = currentRole ? currentRole.name : '角色';
     document.getElementById('roleInterpTitle').textContent = roleName + '解读';
-    // Hexagram subtitle with classical name meaning
     const hexMeanings = {
       '乾': '刚健之道', '坤': '柔顺之道', '屯': '起步之难', '蒙': '启蒙之道',
       '需': '等待之道', '讼': '争讼之道', '师': '统帅之道', '比': '亲近之道',
@@ -668,40 +785,12 @@ function renderResult(d) {
     document.getElementById('roleInterpWarning').textContent = ri.warning;
   }
 
-  // Build changing positions lookup
-  const changingPositions = {};
-  d.changing_lines.forEach(c => { changingPositions[c.position] = c; });
-  const lineChoicesMap = {};
-  if (d.line_choices) {
-    d.line_choices.forEach(lc => { lineChoicesMap[lc.position] = lc; });
-  }
-
-  // Hexagram visual
-  renderHexagramVisual(d, changingPositions, lineChoicesMap);
-
-  // Warnings
-  const ws = document.getElementById('warningsSection');
-  const wl = document.getElementById('warningsList');
-  wl.innerHTML = '';
-  if (d.warnings.length > 0) {
-    ws.classList.remove('hidden');
-    d.warnings.forEach(w => {
-      const li = document.createElement('li');
-      li.textContent = w;
-      wl.appendChild(li);
-    });
-  } else { ws.classList.add('hidden'); }
-
-  // Text content
+  // Expandable: detailed analysis
   document.getElementById('coreMeaning').textContent = h.core_meaning;
   document.getElementById('situation').textContent = h.situation;
-  document.getElementById('strategy').textContent = h.strategy;
-  document.getElementById('risk').textContent = h.risk;
   document.getElementById('direction').textContent = h.direction;
   document.getElementById('structure').textContent = h.structure;
   document.getElementById('actionSummary').textContent = d.action_summary;
-
-  // Key yao
   const kySection = document.getElementById('keyYaoSection');
   if (h.key_yao) { kySection.classList.remove('hidden'); document.getElementById('keyYao').textContent = h.key_yao; }
   else { kySection.classList.add('hidden'); }
@@ -712,17 +801,17 @@ function renderResult(d) {
   // Position interactive hexagram
   renderPositionHex(d, changingPositions);
 
-  // Changing lines
+  // Changing lines (detailed version in expandable)
   renderChangingSection(d, changingPositions);
 
-  // Reflection tab
+  // Reflection
   renderReflection(d, h);
 
   // Share text
   buildShareText(d, h);
 
-  // Reset to first tab
-  switchTab('tab-hexagram', document.querySelector('.tab-btn[data-tab="tab-hexagram"]'));
+  // Save to history
+  saveToHistory(d, h);
 
   // Show result with fade
   document.getElementById('result').classList.remove('hidden');
@@ -984,13 +1073,20 @@ ${d.action_summary}`;
 }
 
 /* =============================================
-   TABS
+   EXPAND / COLLAPSE
    ============================================= */
-function switchTab(tabId, btn) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
-  btn.classList.add('active');
+function toggleExpand(id, btn) {
+  const el = document.getElementById(id);
+  const arrow = btn.querySelector('.expand-arrow');
+  if (el.classList.contains('hidden')) {
+    el.classList.remove('hidden');
+    arrow.innerHTML = '&#9652;';
+    btn.classList.add('expanded');
+  } else {
+    el.classList.add('hidden');
+    arrow.innerHTML = '&#9662;';
+    btn.classList.remove('expanded');
+  }
 }
 
 /* =============================================
@@ -1002,10 +1098,103 @@ function copyShare() {
   navigator.clipboard.writeText(textarea.value).then(() => {
     const btn = event.currentTarget;
     btn.textContent = '已复制!';
-    setTimeout(() => { btn.textContent = '复制诊断摘要'; }, 2000);
+    setTimeout(() => { btn.textContent = '复制摘要'; }, 2000);
   }).catch(() => {
     document.execCommand('copy');
   });
+}
+
+function showShareCard() {
+  if (!currentDiagnosisData) return;
+  const d = currentDiagnosisData;
+  const h = d.hexagram;
+  const oneLiner = h.one_liner || '';
+  const transformed = d.transformed ? `&#9889; 变卦&#8594;${d.transformed.full_name}` : '';
+  const riskLine = `风险：${d.risk_level}`;
+  document.getElementById('shareCardInner').innerHTML = `
+    <div class="sc-symbols">${h.symbols}</div>
+    <div class="sc-fullname">${h.full_name}</div>
+    <div class="sc-oneliner">${oneLiner}</div>
+    ${transformed ? `<div class="sc-transformed">${transformed}</div>` : ''}
+    <div class="sc-risk">${riskLine}</div>
+    <div class="sc-brand">易断 yiduan.cc</div>
+  `;
+  document.getElementById('shareCardOverlay').classList.remove('hidden');
+}
+
+function closeShareCard() {
+  document.getElementById('shareCardOverlay').classList.add('hidden');
+}
+
+/* =============================================
+   DAILY HEXAGRAM
+   ============================================= */
+async function showDaily() {
+  const overlay = document.getElementById('dailyOverlay');
+  overlay.classList.remove('hidden');
+  try {
+    const resp = await fetch('/api/daily');
+    const d = await resp.json();
+    document.getElementById('dailyDate').textContent = d.date;
+    document.getElementById('dailyHexName').textContent = d.hexagram.full_name;
+    document.getElementById('dailyOneLiner').textContent = d.hexagram.one_liner || '';
+    document.getElementById('dailyStrategy').textContent = d.hexagram.strategy ? d.hexagram.strategy.split('。')[0] + '。' : '';
+    if (d.transformed) {
+      const te = document.getElementById('dailyTransformed');
+      te.classList.remove('hidden');
+      te.textContent = '变卦 → ' + d.transformed.full_name + '：' + d.transformed.one_liner;
+    }
+  } catch(e) {
+    document.getElementById('dailyHexName').textContent = '加载失败';
+  }
+}
+
+function closeDaily() {
+  document.getElementById('dailyOverlay').classList.add('hidden');
+}
+
+/* =============================================
+   HISTORY (localStorage)
+   ============================================= */
+function saveToHistory(d, h) {
+  const history = JSON.parse(localStorage.getItem('yiduan_history') || '[]');
+  const entry = {
+    date: new Date().toLocaleDateString('zh-CN'),
+    name: h.full_name,
+    oneLiner: h.one_liner || '',
+    transformed: d.transformed ? d.transformed.full_name : null,
+    number: h.number,
+  };
+  history.unshift(entry);
+  if (history.length > 5) history.length = 5;
+  localStorage.setItem('yiduan_history', JSON.stringify(history));
+}
+
+function showHistory() {
+  const overlay = document.getElementById('historyOverlay');
+  overlay.classList.remove('hidden');
+  const list = document.getElementById('historyList');
+  const history = JSON.parse(localStorage.getItem('yiduan_history') || '[]');
+  if (history.length === 0) {
+    list.innerHTML = '<p class="history-empty">暂无历史记录</p>';
+    return;
+  }
+  list.innerHTML = '';
+  history.forEach(h => {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `
+      <span class="hi-date">${h.date}</span>
+      <span class="hi-name">${h.name}</span>
+      ${h.transformed ? '<span class="hi-arrow">&#8594;</span><span class="hi-trans">' + h.transformed + '</span>' : ''}
+      <div class="hi-liner">${h.oneLiner}</div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function closeHistory() {
+  document.getElementById('historyOverlay').classList.add('hidden');
 }
 
 /* =============================================
