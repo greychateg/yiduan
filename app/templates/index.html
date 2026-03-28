@@ -101,6 +101,12 @@
           <button class="reset-top-btn" onclick="resetAll()">&#8592; 重新起卦</button>
         </div>
 
+        <!-- Mutation chain breadcrumb -->
+        <div class="mutation-chain hidden" id="mutationChain">
+          <div class="mutation-chain-label">变卦链</div>
+          <div class="mutation-chain-trail" id="mutationChainTrail"></div>
+        </div>
+
         <!-- Hexagram header -->
         <section class="hex-header">
           <div class="hex-name-block">
@@ -490,6 +496,7 @@ const totalSteps = 6;
 let currentDiagnosisData = null;
 let allHexagramsCache = null;
 let dailyLoaded = false;
+let mutationChain = []; // 变卦链：记录每一步的卦象名称
 
 /* =============================================
    PAGE SWITCHING
@@ -754,13 +761,19 @@ function renderResult(d) {
 
   // Transform transition
   const ttSection = document.getElementById('transformTransition');
+  const oldHint = ttSection.querySelector('.tt-dive-hint');
+  if (oldHint) oldHint.remove();
   if (d.transformed && d.transition_meaning) {
     ttSection.classList.remove('hidden');
     document.getElementById('transformVisual').innerHTML =
       '<span class="tt-from">' + h.full_name + '</span>' +
       '<span class="tt-arrow">&#10132;</span>' +
-      '<span class="tt-to">' + d.transformed.full_name + '</span>';
+      '<span class="tt-to tt-clickable" onclick="diveIntoTransformed()">' + d.transformed.full_name + '</span>';
     document.getElementById('transformMeaning').textContent = d.transition_meaning;
+    const ttHint = document.createElement('div');
+    ttHint.className = 'tt-dive-hint';
+    ttHint.innerHTML = '<button class="tt-dive-btn" onclick="diveIntoTransformed()">&#9758; 深入变卦「' + d.transformed.full_name + '」</button>';
+    ttSection.appendChild(ttHint);
   } else { ttSection.classList.add('hidden'); }
 
   // Gua Ci
@@ -823,6 +836,7 @@ function renderResult(d) {
   renderReflection(d, h);
   buildShareText(d, h);
   saveToHistory(d, h);
+  renderMutationChain();
 
   document.getElementById('result').classList.remove('hidden');
   setTimeout(() => {
@@ -988,7 +1002,7 @@ function renderChangingSection(d, changingPositions) {
     if (d.transformed) {
       th.classList.remove('hidden');
       const tGuaCi = d.transformed.gua_ci ? '<div class="transformed-guaci">' + d.transformed.gua_ci + '</div>' : '';
-      document.getElementById('transformedInfo').innerHTML = '<div class="transformed-name">第' + d.transformed.number + '卦 ' + d.transformed.full_name + '</div>' + tGuaCi + '<div class="transformed-desc">' + d.transformed.structure + '</div><div class="transformed-action">' + d.transformed.strategy + '</div><div class="transformed-direction">' + d.transformed.direction + '</div>';
+      document.getElementById('transformedInfo').innerHTML = '<div class="transformed-name">第' + d.transformed.number + '卦 ' + d.transformed.full_name + '</div>' + tGuaCi + '<div class="transformed-desc">' + d.transformed.structure + '</div><div class="transformed-action">' + d.transformed.strategy + '</div><div class="transformed-direction">' + d.transformed.direction + '</div>' + '<button class="tt-dive-btn tt-dive-btn-detail" onclick="diveIntoTransformed()">&#9758; 深入此变卦</button>';
     } else { th.classList.add('hidden'); }
   } else { cs.classList.add('hidden'); }
 }
@@ -1154,11 +1168,119 @@ function renderProfileHistory() {
 }
 
 /* =============================================
+   MUTATION CHAIN (变卦链)
+   ============================================= */
+function renderMutationChain() {
+  const container = document.getElementById('mutationChain');
+  const trail = document.getElementById('mutationChainTrail');
+  if (mutationChain.length <= 1) {
+    container.classList.add('hidden');
+    return;
+  }
+  container.classList.remove('hidden');
+  trail.innerHTML = '';
+  mutationChain.forEach((entry, idx) => {
+    if (idx > 0) {
+      const arrow = document.createElement('span');
+      arrow.className = 'mc-arrow';
+      arrow.innerHTML = '&#10132;';
+      trail.appendChild(arrow);
+    }
+    const node = document.createElement('span');
+    node.className = 'mc-node' + (idx === mutationChain.length - 1 ? ' mc-current' : ' mc-past');
+    node.textContent = entry.name;
+    if (idx < mutationChain.length - 1) {
+      node.onclick = () => jumpToChainStep(idx);
+      node.style.cursor = 'pointer';
+    }
+    trail.appendChild(node);
+  });
+}
+
+function jumpToChainStep(idx) {
+  const entry = mutationChain[idx];
+  mutationChain = mutationChain.slice(0, idx + 1);
+  currentDiagnosisData = entry.data;
+  renderResult(entry.data);
+}
+
+async function diveIntoTransformed() {
+  const d = currentDiagnosisData;
+  if (!d || !d.transformed || !d.changing_lines || d.changing_lines.length === 0) return;
+
+  // 计算变卦的六爻阴阳
+  const transformedLines = [];
+  for (let i = 0; i < 6; i++) {
+    transformedLines.push(d.yao_lines[i].is_yang);
+  }
+  d.changing_lines.forEach(c => {
+    transformedLines[c.position - 1] = c.to_yang;
+  });
+
+  // 为变卦的每一爻生成随机四象（保持阴阳一致，随机决定是否为变爻）
+  // 使用传统概率：老阳/老阴出现概率 1/4，少阳/少阴 3/4
+  const newSelections = {};
+  for (let i = 0; i < 6; i++) {
+    const isYang = transformedLines[i];
+    const isOld = Math.random() < 0.25;
+    if (isYang) {
+      newSelections['line' + (i + 1)] = isOld ? 'old_yang' : 'young_yang';
+    } else {
+      newSelections['line' + (i + 1)] = isOld ? 'old_yin' : 'young_yin';
+    }
+  }
+
+  // 保存当前卦到链中（如果链为空，先加入原始卦）
+  if (mutationChain.length === 0) {
+    mutationChain.push({
+      name: d.hexagram.full_name,
+      data: d,
+    });
+  }
+
+  // 发起新的诊断请求
+  const loading = document.getElementById('loading');
+  document.getElementById('result').classList.add('hidden');
+  loading.classList.remove('hidden');
+  animateMutationTransition(d.hexagram.full_name, d.transformed.full_name);
+
+  try {
+    const resp = await fetch('/diagnose', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...newSelections, role: currentRole.key }),
+    });
+    const newData = await resp.json();
+    if (newData.error) { alert(newData.error); return; }
+
+    currentDiagnosisData = newData;
+    mutationChain.push({
+      name: newData.hexagram.full_name,
+      data: newData,
+    });
+
+    await new Promise(r => setTimeout(r, 800));
+    loading.classList.add('hidden');
+    renderResult(newData);
+  } catch (err) {
+    alert('变卦推演失败: ' + err.message);
+    loading.classList.add('hidden');
+    document.getElementById('result').classList.remove('hidden');
+  }
+}
+
+function animateMutationTransition(fromName, toName) {
+  const container = document.getElementById('castingLines');
+  container.innerHTML = '<div class="mutation-anim"><span class="mutation-from">' + fromName + '</span><span class="mutation-arrow-anim">&#10132;</span><span class="mutation-to">' + toName + '</span></div>';
+}
+
+/* =============================================
    RESET
    ============================================= */
 function resetAll() {
   for (let i = 1; i <= 6; i++) delete selections['line' + i];
   currentDiagnosisData = null;
+  mutationChain = [];
   document.getElementById('result').classList.add('hidden');
   document.getElementById('castInputSection').classList.remove('hidden');
   renderQuestions();

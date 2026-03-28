@@ -1169,6 +1169,104 @@ body {
 .transformed-action { font-size: 11px; color: #d4a853; line-height: 1.5; padding-left: 8px; border-left: 2px solid #d4a853; margin-bottom: 4px; }
 .transformed-direction { font-size: 11px; color: #a78bfa; line-height: 1.5; padding-left: 8px; border-left: 2px solid #a78bfa; }
 
+/* Mutation Chain (变卦链) */
+.mutation-chain {
+  padding: 10px 14px;
+  margin: 0 0 10px;
+  background: #0e0e16;
+  border-radius: 8px;
+  border: 1px solid #1a1a2e;
+}
+.mutation-chain-label {
+  font-size: 11px;
+  color: #666;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+.mutation-chain-trail {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.mc-arrow { color: #555; font-size: 12px; }
+.mc-node {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+.mc-past {
+  color: #888;
+  background: #1a1a2e;
+}
+.mc-past:hover {
+  color: #d4a853;
+  background: #252540;
+}
+.mc-current {
+  color: #e0e0e0;
+  background: #1e1e3a;
+  border: 1px solid #d4a853;
+  font-weight: 700;
+}
+
+/* Dive into transformed button */
+.tt-clickable {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+}
+.tt-clickable:hover { color: #c0e8ff; }
+.tt-dive-hint {
+  margin-top: 10px;
+}
+.tt-dive-btn {
+  background: linear-gradient(135deg, #1a1a3e, #252550);
+  color: #a8d4e6;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 1px;
+}
+.tt-dive-btn:hover {
+  background: linear-gradient(135deg, #252550, #303070);
+  border-color: #a8d4e6;
+  color: #fff;
+}
+.tt-dive-btn-detail {
+  margin-top: 8px;
+  display: inline-block;
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+/* Mutation transition animation */
+.mutation-anim {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  font-size: 18px;
+  padding: 20px 0;
+  animation: mutationPulse 1.5s ease-in-out infinite;
+}
+.mutation-from { color: #d4a853; }
+.mutation-arrow-anim { color: #666; animation: mutationArrow 0.8s ease-in-out infinite; }
+.mutation-to { color: #a8d4e6; }
+@keyframes mutationPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+@keyframes mutationArrow {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(6px); }
+}
+
 /* Bias / Reflection */
 .bias { margin-bottom: 16px; }
 
