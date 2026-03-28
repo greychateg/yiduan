@@ -8,7 +8,8 @@ from app.data.roles import (
     ROLES, ROLE_ORDER, FOUR_IMAGE_LABELS,
 )
 from app.data.role_interpretations import get_role_interpretation
-from app.data.hexagrams import ONE_LINERS, HEXAGRAM_LOOKUP
+from app.data.hexagrams import ONE_LINERS, HEXAGRAM_LOOKUP, HEXAGRAM_DETAILS, Hexagram
+from app.data.yao import get_yao_lines
 from app.engine.diagnosis import diagnose, FOUR_IMAGE_IS_YANG
 
 
@@ -210,6 +211,87 @@ def create_app() -> Flask:
                 "full_name": result.transformed_hexagram.full_name,
                 "one_liner": result.transformed_hexagram.one_liner or _ol.get(result.transformed_hexagram.number, ""),
             } if result.transformed_hexagram else None,
+        })
+
+    @app.route("/api/hexagrams")
+    def get_hexagrams():
+        """返回全部64卦基本信息，供卦典页面使用。"""
+        result = []
+        for (lower_key, upper_key), entry in HEXAGRAM_LOOKUP.items():
+            number, name, full_name, symbols = entry
+            h = HEXAGRAM_DETAILS.get(number)
+            one_liner = ""
+            gua_ci = ""
+            if h:
+                one_liner = h.one_liner or ONE_LINERS.get(number, "")
+                gua_ci = h.gua_ci or ""
+            else:
+                one_liner = ONE_LINERS.get(number, "")
+            result.append({
+                "number": number,
+                "name": name,
+                "full_name": full_name,
+                "symbols": symbols,
+                "one_liner": one_liner,
+                "gua_ci": gua_ci,
+            })
+        # Deduplicate by number (some entries may map to the same hexagram)
+        seen = {}
+        deduped = []
+        for item in result:
+            if item["number"] not in seen:
+                seen[item["number"]] = True
+                deduped.append(item)
+        deduped.sort(key=lambda x: x["number"])
+        return jsonify(deduped)
+
+    @app.route("/api/hexagram/<int:number>")
+    def get_hexagram_detail(number):
+        """返回单个卦象的完整信息，包括爻辞。"""
+        # Find hexagram by number
+        h = HEXAGRAM_DETAILS.get(number)
+        if not h:
+            # Search in lookup table
+            found = None
+            for (lower_key, upper_key), entry in HEXAGRAM_LOOKUP.items():
+                if entry[0] == number:
+                    found = (lower_key, upper_key, entry)
+                    break
+            if not found:
+                return jsonify({"error": f"卦象 {number} 不存在"}), 404
+            lower_key, upper_key, entry = found
+            from app.data.hexagrams import lookup_hexagram as _lookup
+            h = _lookup(lower_key, upper_key)
+            if not h:
+                return jsonify({"error": f"卦象 {number} 不存在"}), 404
+
+        # Get yao lines
+        yao_lines = get_yao_lines(h.number, h.lower, h.upper)
+        yao_data = []
+        for y in yao_lines:
+            yao_data.append({
+                "position": y.position,
+                "is_yang": y.is_yang,
+                "classical": y.classical,
+                "interpretation": y.interpretation,
+                "advice": y.advice,
+            })
+
+        return jsonify({
+            "number": h.number,
+            "name": h.name,
+            "full_name": h.full_name,
+            "symbols": h.symbols,
+            "structure": h.structure,
+            "core_meaning": h.core_meaning,
+            "situation": h.situation,
+            "strategy": h.strategy,
+            "risk": h.risk,
+            "direction": h.direction,
+            "gua_ci": h.gua_ci or "",
+            "one_liner": h.one_liner or ONE_LINERS.get(h.number, ""),
+            "is_detailed": h.is_detailed,
+            "yao_lines": yao_data,
         })
 
     @app.route("/diagnose", methods=["POST"])
