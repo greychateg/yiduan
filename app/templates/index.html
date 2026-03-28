@@ -36,6 +36,9 @@
 
     <!-- Bottom actions -->
     <div class="input-actions">
+      <button class="coin-toss-btn" id="coinTossBtn" onclick="coinTossMode()">
+        <span class="coin-toss-icon">☰</span> 掷币起卦
+      </button>
       <button class="random-btn" id="randomBtn" onclick="randomCast()">
         <span class="random-icon">🎲</span> 随机起卦
       </button>
@@ -172,6 +175,44 @@
     <!-- ==================== TAB 2: 深入 ==================== -->
     <div class="tab-content" id="tab-deep">
 
+      <!-- Guided Position Finder -->
+      <section class="position-finder-section" id="positionFinderSection">
+        <h3>找到你的位置</h3>
+        <p class="position-hint">回答 3 个快速问题，定位你所处的阶段</p>
+        <div class="pf-questions" id="pfQuestions">
+          <div class="pf-q" data-pf="A">
+            <div class="pf-q-title">这件事你已经投入了多少？</div>
+            <div class="pf-pills">
+              <button class="pf-pill" data-scores="1,2" onclick="pfSelect(this)">还没开始 / 刚起步</button>
+              <button class="pf-pill" data-scores="3,4" onclick="pfSelect(this)">已投入一段时间</button>
+              <button class="pf-pill" data-scores="5,6" onclick="pfSelect(this)">深度参与 / 接近尾声</button>
+            </div>
+          </div>
+          <div class="pf-q" data-pf="B">
+            <div class="pf-q-title">你现在最大的感受是？</div>
+            <div class="pf-pills">
+              <button class="pf-pill" data-scores="1" onclick="pfSelect(this)">迷茫，不知道方向</button>
+              <button class="pf-pill" data-scores="2" onclick="pfSelect(this)">有基础但在积累</button>
+              <button class="pf-pill" data-scores="3" onclick="pfSelect(this)">焦虑，在十字路口</button>
+              <button class="pf-pill" data-scores="4" onclick="pfSelect(this)">在适应新阶段</button>
+              <button class="pf-pill" data-scores="5" onclick="pfSelect(this)">掌控感强，在主导</button>
+              <button class="pf-pill" data-scores="6" onclick="pfSelect(this)">差不多了，考虑收尾</button>
+            </div>
+          </div>
+          <div class="pf-q" data-pf="C">
+            <div class="pf-q-title">你需要的建议更偏向？</div>
+            <div class="pf-pills">
+              <button class="pf-pill" data-scores="1,2" onclick="pfSelect(this)">怎么开始</button>
+              <button class="pf-pill" data-scores="3,4" onclick="pfSelect(this)">怎么过渡/转型</button>
+              <button class="pf-pill" data-scores="5,6" onclick="pfSelect(this)">怎么收场</button>
+            </div>
+          </div>
+        </div>
+        <div class="pf-result hidden" id="pfResult">
+          <span class="pf-result-text" id="pfResultText"></span>
+        </div>
+      </section>
+
       <!-- Position selector — interactive hexagram -->
       <section class="position-section">
         <h3>你在哪个位置？</h3>
@@ -274,6 +315,52 @@
   </div>
 </div>
 
+<!-- ============================================= -->
+<!-- COIN TOSS OVERLAY (full-screen ritual)       -->
+<!-- ============================================= -->
+<div id="coinTossOverlay" class="coin-overlay hidden">
+  <div class="coin-overlay-inner">
+    <div class="coin-header">
+      <h2 class="coin-title">掷币起卦</h2>
+      <p class="coin-subtitle">心诚则灵 · 三枚铜钱</p>
+      <button class="coin-close-btn" onclick="closeCoinToss()">&times;</button>
+    </div>
+
+    <div class="coin-progress-row">
+      <span class="coin-progress-text" id="coinProgressText">第一爻</span>
+      <div class="coin-progress-dots" id="coinProgressDots">
+        <span class="coin-dot"></span><span class="coin-dot"></span><span class="coin-dot"></span>
+        <span class="coin-dot"></span><span class="coin-dot"></span><span class="coin-dot"></span>
+      </div>
+    </div>
+
+    <div class="coin-stage">
+      <!-- 3 coins displayed here -->
+      <div class="coin-trio" id="coinTrio">
+        <div class="coin-piece" id="coin1"><span class="coin-face">☰</span></div>
+        <div class="coin-piece" id="coin2"><span class="coin-face">☰</span></div>
+        <div class="coin-piece" id="coin3"><span class="coin-face">☰</span></div>
+      </div>
+      <div class="coin-result-label hidden" id="coinResultLabel"></div>
+    </div>
+
+    <button class="coin-shake-btn" id="coinShakeBtn" onclick="tossCoin()">
+      <span class="coin-shake-text">摇一摇</span>
+    </button>
+
+    <!-- Hexagram building up on the side -->
+    <div class="coin-hex-preview" id="coinHexPreview">
+      <div class="coin-hex-line" data-line="6"></div>
+      <div class="coin-hex-line" data-line="5"></div>
+      <div class="coin-hex-line" data-line="4"></div>
+      <div class="coin-hex-sep-preview"></div>
+      <div class="coin-hex-line" data-line="3"></div>
+      <div class="coin-hex-line" data-line="2"></div>
+      <div class="coin-hex-line" data-line="1"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Hidden share textarea -->
 <textarea id="shareText" style="position:absolute;left:-9999px" readonly></textarea>
 
@@ -357,11 +444,13 @@ function renderQuestions() {
     });
 
     const isAnswered = !!selections['line' + (i+1)];
+    const yaoLabel = q.yao_label || '';
+    const yaoStage = q.yao_stage || '';
     card.innerHTML = `
       <div class="q-header">
         <span class="q-num">${i+1}</span>
         <div class="q-text">
-          <div class="q-title">${q.title}</div>
+          <div class="q-title">${q.title}${yaoLabel ? ` <span class="q-yao-badge">${yaoLabel}<span class="q-yao-stage">${yaoStage}</span></span>` : ''}</div>
         </div>
         <span class="q-check ${isAnswered ? '' : 'hidden'}" id="qCheck${i+1}">✓</span>
       </div>
@@ -936,6 +1025,233 @@ function resetAll() {
   updateProgress();
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* =============================================
+   COIN TOSS MODE (Feature 1)
+   ============================================= */
+let coinTossStep = 0;
+let coinTossResults = [];
+
+function coinTossMode() {
+  coinTossStep = 0;
+  coinTossResults = [];
+  const overlay = document.getElementById('coinTossOverlay');
+  overlay.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  resetCoinUI();
+  updateCoinProgress();
+}
+
+function closeCoinToss() {
+  document.getElementById('coinTossOverlay').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function resetCoinUI() {
+  const coins = ['coin1','coin2','coin3'];
+  coins.forEach(id => {
+    const el = document.getElementById(id);
+    el.className = 'coin-piece';
+    el.querySelector('.coin-face').textContent = '☰';
+  });
+  document.getElementById('coinResultLabel').classList.add('hidden');
+  document.getElementById('coinShakeBtn').disabled = false;
+  document.getElementById('coinShakeBtn').querySelector('.coin-shake-text').textContent = '摇一摇';
+}
+
+const YAO_ORDINALS = ['一','二','三','四','五','六'];
+const YAO_NAMES_CN = ['初爻','二爻','三爻','四爻','五爻','上爻'];
+
+function updateCoinProgress() {
+  const text = document.getElementById('coinProgressText');
+  if (coinTossStep < 6) {
+    text.textContent = `第${YAO_ORDINALS[coinTossStep]}爻`;
+  } else {
+    text.textContent = '起卦完成';
+  }
+  const dots = document.querySelectorAll('.coin-dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('dot-done', 'dot-active', 'dot-changing');
+    if (i < coinTossStep) {
+      d.classList.add('dot-done');
+      // Check if this was a changing line
+      if (coinTossResults[i] === 'old_yang' || coinTossResults[i] === 'old_yin') {
+        d.classList.add('dot-changing');
+      }
+    } else if (i === coinTossStep) {
+      d.classList.add('dot-active');
+    }
+  });
+}
+
+function tossCoin() {
+  if (coinTossStep >= 6) return;
+
+  const btn = document.getElementById('coinShakeBtn');
+  btn.disabled = true;
+
+  // Simulate 3 coin tosses
+  const coins = ['coin1','coin2','coin3'];
+  const results = []; // true=heads(yang), false=tails(yin)
+
+  for (let i = 0; i < 3; i++) {
+    results.push(Math.random() < 0.5); // 50% heads
+  }
+
+  // Animate coins spinning
+  coins.forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.classList.add('coin-spinning');
+  });
+
+  // After spin animation, show results
+  setTimeout(() => {
+    coins.forEach((id, i) => {
+      const el = document.getElementById(id);
+      el.classList.remove('coin-spinning');
+      el.classList.add('coin-landed');
+      const face = el.querySelector('.coin-face');
+      if (results[i]) {
+        face.textContent = '☰';
+        el.classList.add('coin-yang');
+      } else {
+        face.textContent = '☷';
+        el.classList.add('coin-yin');
+      }
+    });
+
+    // Count heads
+    const heads = results.filter(r => r).length;
+    let fourImage, label, nature;
+    if (heads === 3) {
+      fourImage = 'old_yang'; label = '太阳'; nature = '极阳将变';
+    } else if (heads === 2) {
+      fourImage = 'young_yang'; label = '少阳'; nature = '稳定阳';
+    } else if (heads === 1) {
+      fourImage = 'young_yin'; label = '少阴'; nature = '稳定阴';
+    } else {
+      fourImage = 'old_yin'; label = '太阴'; nature = '极阴将变';
+    }
+
+    // Show result label
+    const resultEl = document.getElementById('coinResultLabel');
+    resultEl.classList.remove('hidden');
+    const isChanging = fourImage === 'old_yang' || fourImage === 'old_yin';
+    resultEl.className = 'coin-result-label ' + (isChanging ? 'coin-result-changing' : '');
+    resultEl.innerHTML = `
+      <span class="coin-result-yao">${YAO_NAMES_CN[coinTossStep]}</span>
+      <span class="coin-result-fi">${label}</span>
+      <span class="coin-result-nature">${nature}</span>
+    `;
+
+    // Pulse effect for changing lines
+    if (isChanging) {
+      resultEl.classList.add('coin-result-glow');
+    }
+
+    // Store result
+    coinTossResults.push(fourImage);
+    coinTossStep++;
+
+    // Update hexagram preview
+    updateCoinHexPreview();
+    updateCoinProgress();
+
+    // Enable next toss or finish
+    setTimeout(() => {
+      if (coinTossStep < 6) {
+        resetCoinUI();
+        updateCoinProgress();
+      } else {
+        // All 6 done — brief pause then submit
+        btn.querySelector('.coin-shake-text').textContent = '起卦中...';
+        setTimeout(() => {
+          // Transfer results to selections
+          for (let i = 0; i < 6; i++) {
+            selections['line' + (i + 1)] = coinTossResults[i];
+          }
+          closeCoinToss();
+          renderQuestions(); // update UI to show selections
+          updateProgress();
+          submitDiagnosis();
+        }, 1200);
+      }
+    }, 1000);
+  }, 800);
+}
+
+function updateCoinHexPreview() {
+  for (let i = 0; i < coinTossResults.length; i++) {
+    const lineEl = document.querySelector(`.coin-hex-line[data-line="${i+1}"]`);
+    if (!lineEl) continue;
+    const fi = coinTossResults[i];
+    const isYang = fi === 'young_yang' || fi === 'old_yang';
+    const isChanging = fi === 'old_yang' || fi === 'old_yin';
+
+    if (isYang) {
+      lineEl.innerHTML = '<span class="chex-yang"></span>';
+    } else {
+      lineEl.innerHTML = '<span class="chex-yin"><span></span><span></span></span>';
+    }
+    lineEl.classList.add('chex-filled');
+    if (isChanging) lineEl.classList.add('chex-changing');
+  }
+}
+
+/* =============================================
+   POSITION FINDER (Feature 3)
+   ============================================= */
+const pfSelections = {};
+
+function pfSelect(btn) {
+  const qEl = btn.closest('.pf-q');
+  const qKey = qEl.dataset.pf;
+
+  // Deselect siblings
+  qEl.querySelectorAll('.pf-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+
+  // Parse scores
+  pfSelections[qKey] = btn.dataset.scores.split(',').map(Number);
+
+  // Check if all 3 answered
+  if (pfSelections.A && pfSelections.B && pfSelections.C) {
+    computePositionRecommendation();
+  }
+}
+
+function computePositionRecommendation() {
+  // Score each line 1-6
+  const scores = [0,0,0,0,0,0];
+  Object.values(pfSelections).forEach(lines => {
+    lines.forEach(l => {
+      if (l >= 1 && l <= 6) scores[l-1] += 1;
+    });
+  });
+
+  // Find max
+  let maxScore = 0, maxLine = 1;
+  scores.forEach((s, i) => {
+    if (s > maxScore) { maxScore = s; maxLine = i + 1; }
+  });
+
+  const stageLabels = ['潜伏期','显现期','危险期','跃迁期','巅峰期','过度期'];
+  const resultEl = document.getElementById('pfResult');
+  resultEl.classList.remove('hidden');
+  document.getElementById('pfResultText').innerHTML =
+    `根据你的回答，你可能处于<strong>第${maxLine}爻（${YAO_NAMES_CN[maxLine-1]} · ${stageLabels[maxLine-1]}）</strong>`;
+
+  // Auto-click the recommended position in the hex below
+  if (currentDiagnosisData) {
+    const rows = document.querySelectorAll('.pos-hex-row');
+    rows.forEach(row => {
+      const posNum = row.querySelector('.pos-num');
+      if (posNum && parseInt(posNum.textContent) === maxLine) {
+        row.click();
+      }
+    });
+  }
 }
 
 init();

@@ -1230,3 +1230,480 @@ header h1 {
   .opt-pill { padding: 8px 6px; font-size: 12px; }
   .hex-calligraphy { font-size: 32px; }
 }
+
+/* =============================================
+   FEATURE 1: COIN TOSS OVERLAY
+   ============================================= */
+.coin-toss-btn {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #1a1810, #14120e);
+  border: 1px solid #d4a853;
+  border-radius: 8px;
+  color: #d4a853;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.coin-toss-btn:hover {
+  background: linear-gradient(135deg, #2a2510, #1a1810);
+  box-shadow: 0 0 16px rgba(212, 168, 83, 0.2);
+}
+
+.coin-toss-icon { font-size: 16px; }
+
+.coin-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #050508;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: coinFadeIn 0.4s ease;
+}
+
+.coin-overlay.hidden { display: none !important; }
+
+@keyframes coinFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.coin-overlay-inner {
+  width: 100%;
+  max-width: 500px;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  position: relative;
+}
+
+.coin-header {
+  text-align: center;
+  position: relative;
+  width: 100%;
+}
+
+.coin-title {
+  font-size: 24px;
+  color: #d4a853;
+  letter-spacing: 8px;
+  font-weight: 300;
+}
+
+.coin-subtitle {
+  color: #555;
+  font-size: 13px;
+  margin-top: 6px;
+  letter-spacing: 2px;
+}
+
+.coin-close-btn {
+  position: absolute;
+  top: 0; right: 0;
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s;
+}
+
+.coin-close-btn:hover { color: #d4a853; }
+
+/* Progress dots */
+.coin-progress-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.coin-progress-text {
+  font-size: 16px;
+  color: #d4a853;
+  letter-spacing: 4px;
+  font-weight: 600;
+}
+
+.coin-progress-dots {
+  display: flex;
+  gap: 10px;
+}
+
+.coin-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #1a1a2a;
+  border: 1px solid #2a2a3a;
+  transition: all 0.3s;
+}
+
+.coin-dot.dot-active {
+  background: #d4a853;
+  border-color: #d4a853;
+  box-shadow: 0 0 8px rgba(212, 168, 83, 0.4);
+  animation: dotPulse 1.5s ease-in-out infinite;
+}
+
+.coin-dot.dot-done {
+  background: #4a6a90;
+  border-color: #6488b0;
+}
+
+.coin-dot.dot-done.dot-changing {
+  background: #d4a853;
+  border-color: #e8c070;
+  box-shadow: 0 0 6px rgba(212, 168, 83, 0.3);
+}
+
+@keyframes dotPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+}
+
+/* Coin stage */
+.coin-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  min-height: 180px;
+  justify-content: center;
+}
+
+.coin-trio {
+  display: flex;
+  gap: 20px;
+}
+
+.coin-piece {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #1a1810, #252015);
+  border: 2px solid #3a3020;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  perspective: 600px;
+}
+
+.coin-face {
+  font-size: 28px;
+  color: #d4a853;
+  transition: all 0.3s;
+}
+
+.coin-piece.coin-spinning {
+  animation: coinSpin 0.8s ease-in-out;
+}
+
+@keyframes coinSpin {
+  0% { transform: rotateY(0deg) rotateX(0deg); }
+  25% { transform: rotateY(180deg) rotateX(30deg); }
+  50% { transform: rotateY(360deg) rotateX(-20deg); }
+  75% { transform: rotateY(540deg) rotateX(10deg); }
+  100% { transform: rotateY(720deg) rotateX(0deg); }
+}
+
+.coin-piece.coin-landed {
+  animation: coinLand 0.3s ease-out;
+}
+
+@keyframes coinLand {
+  0% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.coin-piece.coin-yang {
+  background: linear-gradient(145deg, #2a2010, #3a3020);
+  border-color: #d4a853;
+  box-shadow: 0 0 20px rgba(212, 168, 83, 0.25);
+}
+
+.coin-piece.coin-yang .coin-face {
+  color: #e8c070;
+}
+
+.coin-piece.coin-yin {
+  background: linear-gradient(145deg, #0e1420, #142030);
+  border-color: #4a6a90;
+  box-shadow: 0 0 20px rgba(100, 136, 176, 0.2);
+}
+
+.coin-piece.coin-yin .coin-face {
+  color: #6488b0;
+}
+
+/* Coin result label */
+.coin-result-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  background: #111118;
+  border: 1px solid #2a2a3a;
+  border-radius: 8px;
+  animation: fadeIn 0.3s;
+}
+
+.coin-result-changing {
+  border-color: #d4a853;
+  background: #1a1810;
+}
+
+.coin-result-glow {
+  animation: resultGlow 1.5s ease-in-out infinite;
+}
+
+@keyframes resultGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(212, 168, 83, 0.2); }
+  50% { box-shadow: 0 0 24px rgba(212, 168, 83, 0.5); }
+}
+
+.coin-result-yao {
+  font-size: 14px;
+  color: #888;
+  letter-spacing: 2px;
+}
+
+.coin-result-fi {
+  font-size: 18px;
+  font-weight: 700;
+  color: #d4a853;
+  letter-spacing: 3px;
+}
+
+.coin-result-nature {
+  font-size: 12px;
+  color: #666;
+}
+
+/* Shake button */
+.coin-shake-btn {
+  padding: 16px 48px;
+  background: linear-gradient(135deg, #d4a853, #b8860b);
+  color: #0a0a0f;
+  border: none;
+  border-radius: 50px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 4px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(212, 168, 83, 0.3);
+}
+
+.coin-shake-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 28px rgba(212, 168, 83, 0.4);
+}
+
+.coin-shake-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Hexagram preview (building up) */
+.coin-hex-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 12px 20px;
+  background: rgba(17, 17, 24, 0.6);
+  border: 1px solid #1e1e2e;
+  border-radius: 10px;
+  min-height: 100px;
+}
+
+.coin-hex-sep-preview {
+  width: 100px;
+  height: 1px;
+  background: #2a2a3a;
+  margin: 2px 0;
+}
+
+.coin-hex-line {
+  width: 100px;
+  height: 7px;
+  background: #1a1a2a;
+  border-radius: 3px;
+  transition: all 0.4s;
+}
+
+.coin-hex-line.chex-filled {
+  animation: chexAppear 0.4s ease;
+}
+
+@keyframes chexAppear {
+  from { opacity: 0; transform: scaleX(0.5); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+.coin-hex-line.chex-changing {
+  animation: chexGlow 2s ease-in-out infinite;
+}
+
+@keyframes chexGlow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.5); }
+}
+
+.chex-yang {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #c49a3c, #d4a853, #c49a3c);
+  border-radius: 3px;
+}
+
+.chex-yin {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  justify-content: space-between;
+}
+
+.chex-yin span {
+  display: block;
+  width: 44%;
+  height: 100%;
+  background: linear-gradient(90deg, #4a6a90, #6488b0, #4a6a90);
+  border-radius: 3px;
+}
+
+/* =============================================
+   FEATURE 2: YAO BADGE on questions
+   ============================================= */
+.q-yao-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #b89840;
+  background: rgba(212, 168, 83, 0.08);
+  border: 1px solid rgba(212, 168, 83, 0.2);
+  padding: 1px 7px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+  letter-spacing: 0.5px;
+}
+
+.q-yao-stage {
+  color: #777;
+  font-weight: 400;
+  margin-left: 2px;
+}
+
+.q-yao-stage::before {
+  content: '·';
+  margin-right: 2px;
+}
+
+/* =============================================
+   FEATURE 3: POSITION FINDER
+   ============================================= */
+.position-finder-section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #1e1e2e;
+}
+
+.pf-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pf-q {
+  background: #111118;
+  border: 1px solid #1e1e2e;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.pf-q-title {
+  font-size: 14px;
+  color: #ccc;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.pf-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pf-pill {
+  padding: 7px 14px;
+  background: #151520;
+  border: 1px solid #2a2a3a;
+  border-radius: 20px;
+  color: #888;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.pf-pill:hover {
+  border-color: #444;
+  color: #ccc;
+}
+
+.pf-pill.active {
+  border-color: #d4a853;
+  color: #d4a853;
+  background: #1a1810;
+}
+
+.pf-result {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #1a1810, #14120e);
+  border: 1px solid #d4a853;
+  border-radius: 8px;
+  animation: fadeIn 0.3s;
+}
+
+.pf-result-text {
+  font-size: 14px;
+  color: #e8c070;
+  line-height: 1.6;
+}
+
+.pf-result-text strong {
+  color: #d4a853;
+  font-size: 15px;
+}
+
+/* Mobile coin toss */
+@media (max-width: 500px) {
+  .coin-piece { width: 64px; height: 64px; }
+  .coin-face { font-size: 22px; }
+  .coin-shake-btn { padding: 14px 36px; font-size: 16px; }
+  .coin-trio { gap: 14px; }
+  .coin-overlay-inner { padding: 30px 16px; }
+  .coin-title { font-size: 20px; letter-spacing: 6px; }
+  .input-actions { flex-wrap: wrap; }
+  .coin-toss-btn { flex: 1; min-width: calc(50% - 5px); justify-content: center; }
+  .random-btn { flex: 1; min-width: calc(50% - 5px); justify-content: center; }
+  .pf-pills { flex-direction: column; }
+  .pf-pill { text-align: center; }
+}

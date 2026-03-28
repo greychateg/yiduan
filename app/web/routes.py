@@ -38,14 +38,18 @@ def create_app() -> Flask:
     @app.route("/api/roles")
     def get_roles():
         """返回角色数据供前端渲染（含每角色专属问题和选项）。"""
+        yao_labels = ["初爻", "二爻", "三爻", "四爻", "五爻", "上爻"]
+        yao_stages = ["起始", "内核", "转折", "外应", "主位", "终局"]
         result = []
         for key in ROLE_ORDER:
             r = ROLES[key]
             questions_data = []
-            for q in r.questions:
+            for idx, q in enumerate(r.questions):
                 questions_data.append({
                     "title": q.title,
                     "options": q.options,
+                    "yao_label": yao_labels[idx],
+                    "yao_stage": yao_stages[idx],
                 })
             result.append({
                 "key": r.key,
