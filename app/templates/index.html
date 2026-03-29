@@ -538,6 +538,10 @@ async function init() {
       if (retries > 0) {
         await new Promise(r => setTimeout(r, 2000));
       } else {
+        // 即使加载失败，也设一个默认角色防止后续崩溃
+        if (!currentRole) {
+          currentRole = { key: 'investor', name: '投资者', icon: '📈', subtitle: '加密/股票交易者' };
+        }
         document.getElementById('homeDailyContent').innerHTML =
           '<span class="daily-loading">服务启动中，请稍候刷新页面</span>';
       }
@@ -662,6 +666,9 @@ function updateProgress() {
    SUBMIT & RENDER
    ============================================= */
 async function submitDiagnosis() {
+  if (!currentRole) {
+    currentRole = { key: 'investor', name: '投资者', icon: '📈', subtitle: '加密/股票交易者' };
+  }
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
 
