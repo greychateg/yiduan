@@ -516,19 +516,33 @@ function switchPage(name) {
    INIT
    ============================================= */
 async function init() {
-  const resp = await fetch('/api/roles');
-  const data = await resp.json();
-  allRoles = data.roles;
+  let retries = 3;
+  while (retries > 0) {
+    try {
+      const resp = await fetch('/api/roles');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const data = await resp.json();
+      allRoles = data.roles;
 
-  // Restore default role from localStorage
-  const savedRole = localStorage.getItem('yiduan_default_role');
-  const roleIdx = savedRole ? allRoles.findIndex(r => r.key === savedRole) : 0;
-  currentRole = allRoles[roleIdx >= 0 ? roleIdx : 0];
+      const savedRole = localStorage.getItem('yiduan_default_role');
+      const roleIdx = savedRole ? allRoles.findIndex(r => r.key === savedRole) : 0;
+      currentRole = allRoles[roleIdx >= 0 ? roleIdx : 0];
 
-  renderRolePills();
-  renderQuestions();
-  renderHomeHistory();
-  populateRoleSelect();
+      renderRolePills();
+      renderQuestions();
+      renderHomeHistory();
+      populateRoleSelect();
+      return;
+    } catch(e) {
+      retries--;
+      if (retries > 0) {
+        await new Promise(r => setTimeout(r, 2000));
+      } else {
+        document.getElementById('homeDailyContent').innerHTML =
+          '<span class="daily-loading">服务启动中，请稍候刷新页面</span>';
+      }
+    }
+  }
 }
 
 /* =============================================
@@ -1107,7 +1121,11 @@ async function loadDailyHex() {
   const container = document.getElementById('homeDailyContent');
   container.innerHTML = '<span class="daily-loading">加载中...</span>';
   try {
-    const resp = await fetch('/api/daily');
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const resp = await fetch('/api/daily', { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const d = await resp.json();
     dailyLoaded = true;
     container.innerHTML = '<div class="daily-hex-name">' + d.hexagram.symbols + ' ' + d.hexagram.full_name + '</div><div class="daily-one-liner">' + (d.hexagram.one_liner || '') + '</div>' + (d.hexagram.strategy ? '<div class="daily-strategy">' + d.hexagram.strategy.split('。')[0] + '。</div>' : '') + (d.transformed ? '<div class="daily-trans">变卦 → ' + d.transformed.full_name + '</div>' : '');
