@@ -119,6 +119,11 @@
           <div class="one-liner-text" id="oneLinerText"></div>
         </section>
 
+        <!-- Changing context alert -->
+        <section class="changing-context-section hidden" id="changingContextSection">
+          <div class="changing-context-alert" id="changingContextAlert"></div>
+        </section>
+
         <!-- Hexagram visual -->
         <section class="hex-visual">
           <div class="hex-lines hex-animated" id="hexLines"></div>
@@ -135,11 +140,24 @@
           <div class="primary-line-text" id="primaryLineText"></div>
         </section>
 
-        <!-- Transform transition -->
+        <!-- Transform transition (clickable for drill-down) -->
         <section class="transform-transition hidden" id="transformTransition">
           <div class="transform-visual" id="transformVisual"></div>
           <div class="transform-meaning" id="transformMeaning"></div>
+          <button class="transform-drilldown-btn hidden" id="transformDrilldownBtn" onclick="drilldownTransformed()">
+            查看变卦详解 &#8594;
+          </button>
         </section>
+
+        <!-- Transformed hexagram detail overlay -->
+        <div class="hex-detail-overlay hidden" id="transformDetailOverlay">
+          <div class="hex-detail-panel">
+            <div class="hex-detail-top">
+              <button class="hex-detail-back" onclick="closeTransformDetail()">&#8592; 返回诊断结果</button>
+            </div>
+            <div class="hex-detail-content" id="transformDetailContent"></div>
+          </div>
+        </div>
 
         <!-- Gua Ci -->
         <section class="gua-ci-section hidden" id="guaCiSection">
@@ -598,10 +616,10 @@ function renderQuestions() {
 }
 
 const FOUR_IMAGE_MAP = {
-  'young_yang': {label: '少阳', nature: '稳定阳', cls: 'fi-young-yang'},
-  'old_yang': {label: '太阳', nature: '极阳将变', cls: 'fi-old-yang'},
-  'young_yin': {label: '少阴', nature: '稳定阴', cls: 'fi-young-yin'},
-  'old_yin': {label: '太阴', nature: '极阴将变', cls: 'fi-old-yin'},
+  'young_yang': {label: '少阳', nature: '阳·稳定', cls: 'fi-young-yang', hint: '主动积极，可持续'},
+  'old_yang': {label: '太阳', nature: '阳·将变', cls: 'fi-old-yang', hint: '极度扩张，盛极必衰'},
+  'young_yin': {label: '少阴', nature: '阴·稳定', cls: 'fi-young-yin', hint: '被动保守，可控'},
+  'old_yin': {label: '太阴', nature: '阴·将变', cls: 'fi-old-yin', hint: '极度萎缩，否极泰来'},
 };
 
 function selectOption(qNum, key, btn) {
@@ -712,6 +730,13 @@ function renderResult(d) {
 
   document.getElementById('oneLinerText').textContent = h.one_liner || '';
 
+  // Changing context alert
+  const ccSection = document.getElementById('changingContextSection');
+  if (d.changing_context) {
+    ccSection.classList.remove('hidden');
+    document.getElementById('changingContextAlert').textContent = d.changing_context;
+  } else { ccSection.classList.add('hidden'); }
+
   const changingPositions = {};
   d.changing_lines.forEach(c => { changingPositions[c.position] = c; });
   const lineChoicesMap = {};
@@ -727,17 +752,33 @@ function renderResult(d) {
   cpList.innerHTML = '';
   if (d.changing_lines.length > 0) {
     cpSection.classList.remove('hidden');
-    const posNames = ['起点/基础', '内在核心', '转折/危机', '外部适应', '核心判断', '结果/趋势'];
+    const posNames = ['研判立场', '仓位姿态', '价格动能', '市场环境', '核心价值', '风控纪律'];
+    const yangMeanings = [
+      '你对交易的信心到达顶点——过度确信正在蒙蔽判断力',
+      '你的仓位已经极度激进——没有退路意味着没有容错空间',
+      '价格动能达到极限——抛物线走势的尽头是崩塌',
+      '市场狂热到了极点——全民疯狂是见顶的最可靠信号',
+      '估值到达天际——所有好消息已经price in，只剩下失望空间',
+      '你拒绝风控——极度自信的尽头是「亢龙有悔」',
+    ];
+    const yinMeanings = [
+      '你完全放弃了独立研判——但被动到极致也是转变的前兆',
+      '你的资金被完全锁死——但极致的套牢往往接近解套',
+      '价格已经跌无可跌——恐慌性抛售的终点是底部',
+      '市场在极度恐慌中——但血流成河时正是逆向布局的时机',
+      '基本面烂到极致——但已经没有更多坏消息可以出了',
+      '你已经完全放弃风控——但麻木到极致也是清醒的起点',
+    ];
     d.changing_lines.forEach(c => {
       const fromLabel = c.four_image === 'old_yang' ? '太阳' : '太阴';
       const fromYY = c.from_yang ? '阳' : '阴';
       const toYY = c.to_yang ? '阳' : '阴';
       const meaning = c.four_image === 'old_yang'
-        ? '你的' + posNames[c.position-1] + '虽然极强，但正在发生转变——盛极必衰的信号。'
-        : '你的' + posNames[c.position-1] + '虽然极弱，但触底反弹正在发生——否极泰来。';
+        ? yangMeanings[c.position-1]
+        : yinMeanings[c.position-1];
       const div = document.createElement('div');
       div.className = 'changing-prominent-card';
-      div.innerHTML = '<div class="cp-header"><span class="cp-icon">&#9889;</span> 第' + c.position + '爻变动（' + fromLabel + '：' + fromYY + '&#8594;' + toYY + '）</div><div class="cp-meaning">' + meaning + '</div>';
+      div.innerHTML = '<div class="cp-header"><span class="cp-icon">&#9889;</span> ' + posNames[c.position-1] + '（' + fromLabel + '：' + fromYY + '&#8594;' + toYY + '）</div><div class="cp-meaning">' + meaning + '</div>';
       cpList.appendChild(div);
     });
   } else { cpSection.classList.add('hidden'); }
@@ -752,8 +793,9 @@ function renderResult(d) {
     document.getElementById('primaryLineText').textContent = pl.focus_text || '';
   } else { plSection.classList.add('hidden'); }
 
-  // Transform transition
+  // Transform transition (with drilldown)
   const ttSection = document.getElementById('transformTransition');
+  const ddBtn = document.getElementById('transformDrilldownBtn');
   if (d.transformed && d.transition_meaning) {
     ttSection.classList.remove('hidden');
     document.getElementById('transformVisual').innerHTML =
@@ -761,7 +803,12 @@ function renderResult(d) {
       '<span class="tt-arrow">&#10132;</span>' +
       '<span class="tt-to">' + d.transformed.full_name + '</span>';
     document.getElementById('transformMeaning').textContent = d.transition_meaning;
-  } else { ttSection.classList.add('hidden'); }
+    ddBtn.classList.remove('hidden');
+    ddBtn.dataset.hexNumber = d.transformed.number;
+  } else {
+    ttSection.classList.add('hidden');
+    ddBtn.classList.add('hidden');
+  }
 
   // Gua Ci
   const gcSection = document.getElementById('guaCiSection');
@@ -1482,6 +1529,70 @@ function computePositionRecommendation() {
       }
     });
   }
+}
+
+/* =============================================
+   TRANSFORMED HEXAGRAM DRILL-DOWN
+   ============================================= */
+async function drilldownTransformed() {
+  const btn = document.getElementById('transformDrilldownBtn');
+  const hexNum = btn.dataset.hexNumber;
+  if (!hexNum) return;
+  await showHexDetailOverlay(hexNum, 'transformDetailOverlay', 'transformDetailContent');
+}
+
+async function showHexDetailOverlay(hexNum, overlayId, contentId) {
+  const overlay = document.getElementById(overlayId);
+  const content = document.getElementById(contentId);
+  content.innerHTML = '<p style="text-align:center;padding:2rem">加载中...</p>';
+  overlay.classList.remove('hidden');
+
+  try {
+    const resp = await fetch('/api/hexagram/' + hexNum);
+    const h = await resp.json();
+    if (h.error) { content.innerHTML = '<p>加载失败</p>'; return; }
+
+    let yaoHtml = '';
+    if (h.yao_lines && h.yao_lines.length > 0) {
+      const posLabels = ['初', '二', '三', '四', '五', '上'];
+      yaoHtml = '<div class="drill-yao-list">';
+      h.yao_lines.forEach(y => {
+        const yinYang = y.is_yang ? '九' : '六';
+        const lineName = y.position === 1 ? '初' + yinYang :
+                         y.position === 6 ? '上' + yinYang :
+                         yinYang + posLabels[y.position - 1];
+        yaoHtml += '<div class="drill-yao-item">' +
+          '<div class="drill-yao-name">' + lineName + '</div>' +
+          '<div class="drill-yao-classical">' + y.classical + '</div>' +
+          '<div class="drill-yao-interp">' + y.interpretation + '</div>' +
+          '<div class="drill-yao-advice">' + y.advice + '</div>' +
+          '</div>';
+      });
+      yaoHtml += '</div>';
+    }
+
+    content.innerHTML =
+      '<div class="drill-header">' +
+        '<span class="drill-number">第' + h.number + '卦</span>' +
+        '<h2 class="drill-name">' + h.name + '</h2>' +
+        '<span class="drill-fullname">' + h.full_name + ' ' + h.symbols + '</span>' +
+      '</div>' +
+      (h.one_liner ? '<div class="drill-oneliner">' + h.one_liner + '</div>' : '') +
+      (h.gua_ci ? '<blockquote class="drill-guaci">' + h.gua_ci + '</blockquote>' : '') +
+      '<div class="drill-section"><h3>卦义核心</h3><p>' + h.core_meaning + '</p></div>' +
+      '<div class="drill-section"><h3>当前处境</h3><p>' + h.situation + '</p></div>' +
+      '<div class="drill-section"><h3>最佳策略</h3><p>' + h.strategy + '</p></div>' +
+      '<div class="drill-section"><h3>关键风险</h3><p>' + h.risk + '</p></div>' +
+      '<div class="drill-section"><h3>变化方向</h3><p>' + h.direction + '</p></div>' +
+      (h.structure ? '<div class="drill-section"><h3>卦象结构</h3><p>' + h.structure + '</p></div>' : '') +
+      (yaoHtml ? '<div class="drill-section"><h3>六爻详解</h3>' + yaoHtml + '</div>' : '');
+  } catch (err) {
+    content.innerHTML = '<p>加载失败: ' + err.message + '</p>';
+  }
+}
+
+function closeTransformDetail() {
+  document.getElementById('transformDetailOverlay').classList.add('hidden');
 }
 
 init();

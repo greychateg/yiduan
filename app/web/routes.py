@@ -412,16 +412,35 @@ def create_app() -> Flask:
             result.yao_lines, result.line_choices
         )
 
-        # 变卦过渡描述
+        # 变卦过渡描述——强化叙事
         transition_meaning = ""
         if result.transformed_hexagram:
             th = result.transformed_hexagram
             t_liner = th.one_liner or ONE_LINERS.get(th.number, "")
             h_liner = h.one_liner or ONE_LINERS.get(h.number, "")
+            n_ch = len(result.changing_lines)
+            if n_ch >= 4:
+                prefix = "几乎全盘翻转："
+            elif n_ch >= 2:
+                prefix = "关键维度正在转变："
+            else:
+                prefix = "局部变化："
             transition_meaning = (
-                f"从「{h.full_name}」走向「{th.full_name}」"
+                f"{prefix}从「{h.full_name}」走向「{th.full_name}」"
                 + f"——从\u201c{h_liner}\u201d到\u201c{t_liner}\u201d。"
             )
+
+        # 变爻上下文标题——有变爻时生成一句话总结当前状态
+        changing_context = ""
+        if result.changing_lines:
+            from app.engine.diagnosis import POSITION_NAMES as _PN
+            ch_names = [_PN[cl.position - 1] for cl in result.changing_lines if cl.position <= 6]
+            if len(result.changing_lines) >= 4:
+                changing_context = f"⚡ {len(result.changing_lines)}处变爻——当前状态极不稳定，以变卦为准"
+            elif len(result.changing_lines) >= 2:
+                changing_context = f"⚡ {'、'.join(ch_names)}正在发生质变——关注变卦方向"
+            else:
+                changing_context = f"⚡ {'、'.join(ch_names)}即将转变"
 
         return jsonify({
             "hexagram": {
@@ -469,6 +488,7 @@ def create_app() -> Flask:
             "risk_level": result.risk_level,
             "primary_line": primary_line_info,
             "transition_meaning": transition_meaning,
+            "changing_context": changing_context,
             "bias": {
                 "inner": lower_t.inner_bias,
                 "outer": upper_t.outer_bias,

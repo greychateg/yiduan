@@ -88,56 +88,72 @@ def _lines_to_trigram_key(line1: bool, line2: bool, line3: bool) -> str:
     return "qian"
 
 
+POSITION_NAMES = ["研判立场", "仓位姿态", "价格动能", "市场环境", "核心价值", "风控纪律"]
+
+
 def _generate_action_summary(hex: Hexagram, changing_lines: list[ChangingLine],
-                              transformed: Hexagram | None) -> str:
-    """生成行动摘要。"""
+                              transformed: Hexagram | None,
+                              choices: list[str] | None = None) -> str:
+    """生成行动摘要——突出变爻叙事。"""
     parts = []
-    parts.append(hex.strategy.split("。")[0] + "。")
 
     n_changing = len(changing_lines)
     if n_changing == 0:
-        parts.append("卦象纯净无变爻，当前局势稳定，按既定方向执行。")
+        parts.append(f"得「{hex.full_name}」，六爻皆稳，局势明确。")
+        parts.append(hex.strategy.split("。")[0] + "。")
     elif n_changing <= 2:
-        positions = "、".join([f"第{cl.position}爻({FOUR_IMAGE_LABELS[cl.four_image]})" for cl in changing_lines])
-        parts.append(f"变爻在{positions}，局势正在变化中。")
+        # 精确描述哪些维度在变
+        change_descs = []
+        for cl in changing_lines:
+            pos_name = POSITION_NAMES[cl.position - 1] if cl.position <= 6 else f"第{cl.position}爻"
+            if cl.four_image == "old_yang":
+                change_descs.append(f"「{pos_name}」处于极阳——看似最强的地方正在反转")
+            else:
+                change_descs.append(f"「{pos_name}」处于极阴——最弱的环节即将触底反弹")
+        parts.append(f"得「{hex.full_name}」，{n_changing}处变爻：{'；'.join(change_descs)}。")
     elif n_changing <= 4:
-        parts.append(f"有{n_changing}个变爻，局势高度动荡，谨慎决策。")
+        parts.append(f"得「{hex.full_name}」，{n_changing}处变爻，局势高度动荡——当前状态不可持续。")
     else:
-        parts.append(f"有{n_changing}个变爻，几乎全盘变动，以变卦为主参考。")
+        parts.append(f"得「{hex.full_name}」，{n_changing}处变爻，几乎全盘翻转——以变卦「{transformed.full_name if transformed else ''}」为主参考。")
 
-    if transformed:
-        parts.append(f"局势正在向「{transformed.full_name}」方向演变。")
+    if transformed and n_changing <= 4:
+        parts.append(f"局势正从「{hex.name}」演变为「{transformed.name}」——这才是真正的方向。")
 
     return " ".join(parts)
 
 
 def _assess_risk(hex: Hexagram, changing_lines: list[ChangingLine]) -> str:
-    """评估风险等级。"""
+    """评估风险等级——基于变爻位置和性质，不依赖简单的卦号分类。
+
+    核心逻辑：
+    - 变爻越多，越不稳定
+    - 关键位置（5爻=核心价值，6爻=风控，4爻=市场）的变爻比低位更危险
+    - 太阳变爻（盛极将衰）比太阴变爻（否极泰来）在高位更危险
+    - 坎卦(29)等本身就代表险境的卦额外加分
+    """
     risk_score = 0
 
-    # 变爻数量影响风险
+    # 每个变爻基础 +1
     risk_score += len(changing_lines)
 
-    # 太阳(old_yang)变爻比太阴(old_yin)更危险（极盛转衰）
+    # 关键位置加权
+    critical_positions = {5: 2, 6: 2, 4: 1}  # 核心价值、风控、市场环境
     for cl in changing_lines:
-        if cl.four_image == "old_yang":
-            risk_score += 1  # 额外加分
+        extra = critical_positions.get(cl.position, 0)
+        risk_score += extra
+        # 太阳在关键位置=极危险（盛极必衰发生在最重要的地方）
+        if cl.four_image == "old_yang" and cl.position in {4, 5, 6}:
+            risk_score += 1
 
-    # 危险卦
-    dangerous = {29, 47, 36, 23, 4, 39, 3, 64}
-    if hex.number in dangerous:
-        risk_score += 3
-
-    # 安全卦
-    safe = {1, 2, 11, 14, 15, 35, 46, 58}
-    if hex.number in safe:
-        risk_score -= 1
+    # 坎(29 重险)、困(47 困厄)、蹇(39 艰难) 本身含险义
+    inherent_risk = {29: 2, 47: 2, 39: 1, 36: 1, 23: 1}
+    risk_score += inherent_risk.get(hex.number, 0)
 
     if risk_score <= 1:
         return "低"
     elif risk_score <= 3:
         return "中"
-    elif risk_score <= 5:
+    elif risk_score <= 6:
         return "高"
     else:
         return "极高"
@@ -223,7 +239,7 @@ def diagnose(line1: str, line2: str, line3: str,
         transformed_hex = lookup_hexagram(trans_lower, trans_upper)
 
     # 7. 生成摘要和风险评估
-    action_summary = _generate_action_summary(hexagram, changing_lines, transformed_hex)
+    action_summary = _generate_action_summary(hexagram, changing_lines, transformed_hex, choices)
     risk_level = _assess_risk(hexagram, changing_lines)
 
     return DiagnosisResult(

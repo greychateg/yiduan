@@ -1856,3 +1856,118 @@ body {
   .library-grid { grid-template-columns: repeat(3, 1fr); }
   .home-title { font-size: 32px; }
 }
+
+/* =============================================
+   CHANGING CONTEXT ALERT
+   ============================================= */
+.changing-context-section {
+  margin: 8px 0 12px;
+}
+.changing-context-alert {
+  background: rgba(255, 165, 0, 0.12);
+  border: 1px solid rgba(255, 165, 0, 0.35);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #ffb347;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* =============================================
+   TRANSFORM DRILLDOWN
+   ============================================= */
+.transform-drilldown-btn {
+  display: block;
+  margin: 12px auto 0;
+  background: rgba(200, 160, 80, 0.15);
+  border: 1px solid rgba(200, 160, 80, 0.4);
+  color: #c8a050;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.transform-drilldown-btn:active {
+  background: rgba(200, 160, 80, 0.3);
+}
+
+/* Drill-down overlay content */
+.drill-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.drill-number {
+  font-size: 12px;
+  color: #888;
+}
+.drill-name {
+  font-size: 28px;
+  color: #c8a050;
+  margin: 4px 0;
+}
+.drill-fullname {
+  font-size: 14px;
+  color: #aaa;
+}
+.drill-oneliner {
+  text-align: center;
+  font-size: 15px;
+  color: #ccc;
+  margin-bottom: 16px;
+  font-style: italic;
+}
+.drill-guaci {
+  border-left: 3px solid #c8a050;
+  padding: 10px 14px;
+  margin: 12px 0;
+  color: #bbb;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.drill-section {
+  margin: 16px 0;
+}
+.drill-section h3 {
+  font-size: 14px;
+  color: #c8a050;
+  margin-bottom: 6px;
+}
+.drill-section p {
+  font-size: 14px;
+  color: #ccc;
+  line-height: 1.6;
+}
+.drill-yao-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.drill-yao-item {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.drill-yao-name {
+  font-size: 13px;
+  color: #c8a050;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.drill-yao-classical {
+  font-size: 12px;
+  color: #999;
+  font-style: italic;
+  margin-bottom: 4px;
+}
+.drill-yao-interp {
+  font-size: 13px;
+  color: #ccc;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+.drill-yao-advice {
+  font-size: 12px;
+  color: #aaa;
+}
